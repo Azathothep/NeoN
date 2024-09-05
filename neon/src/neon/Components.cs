@@ -6,34 +6,28 @@ using System.Dynamic;
 
 namespace neon
 {
-    public class Components
+    public partial class Components
     {
-        public static Components storage { get; private set; }
+        private class ComponentsStorage {
+            public Dictionary<EntityID, (Archetype, int)> EntityToArchetype = new();
 
-        private Dictionary<EntityID, (Archetype, int)> m_EntityToArchetype = new();
+            public Dictionary<Archetype, List<EntityID>> ArchetypeToEntities = new();
 
-        private Dictionary<Archetype, List<EntityID>> m_ArchetypeToEntities = new();
+            public Dictionary<ComponentSet, Archetype> ComponentSetToArchetype = new();
 
-        private Dictionary<ComponentSet, Archetype> m_ComponentSetToArchetype = new();
-
-        private Dictionary<ComponentID, Dictionary<ArchetypeID, int>> m_ComponentIDToArchetypeSet = new();
-
-        public Components()
-        {
-            if (storage == null)
-                storage = this;
-            else
-                throw new InvalidOperationException($"An object of type {this.GetType()} has already been created!");
+            public Dictionary<ComponentID, Dictionary<ArchetypeID, int>> ComponentIDToArchetypeSet = new();
         }
 
+        private static ComponentsStorage storage = new();
 
+        private Components() { }
 
         public static bool Has<T>(EntityID entityID) where T : class, IComponent
         {
-            ComponentID componentID = Component.GetID<T>();
+            ComponentID componentID = Components.GetID<T>();
 
             // Getting entity's archetype & row index
-            if (!storage.m_EntityToArchetype.TryGetValue(entityID, out (Archetype, int) archetypeRecord))
+            if (!storage.EntityToArchetype.TryGetValue(entityID, out (Archetype, int) archetypeRecord))
             {
                 Debug.WriteLine($"Error: Archetype for entity {entityID} not found in dictionary");
                 return false;
@@ -42,7 +36,7 @@ namespace neon
             (Archetype archetype, int _) = archetypeRecord;
 
             // Getting every archetypeID that contains the required component & the component position in their column
-            if (!storage.m_ComponentIDToArchetypeSet.TryGetValue(componentID, out Dictionary<ArchetypeID, int> archetypeSet))
+            if (!storage.ComponentIDToArchetypeSet.TryGetValue(componentID, out Dictionary<ArchetypeID, int> archetypeSet))
             {
                 Debug.WriteLine($"Error: ArchetypeSet for component {componentID} not found in dictionary");
                 return false;
@@ -52,20 +46,20 @@ namespace neon
             return archetypeSet.ContainsKey(archetype.ID);
         }
 
-        public static T? Get<T>(EntityID entityID) where T : class, IComponent => storage.GetInternal<T>(entityID);
+        public static T? Get<T>(EntityID entityID) where T : class, IComponent => GetInternal<T>(entityID);
 
         public static bool TryGet<T>(EntityID entityID, out T? result) where T : class, IComponent
         {
-            result = storage.GetInternal<T>(entityID);
+            result = GetInternal<T>(entityID);
             return result != null;
         }
 
-        private T? GetInternal<T>(EntityID entityID) where T : class, IComponent
+        private static T? GetInternal<T>(EntityID entityID) where T : class, IComponent
         {
-            ComponentID componentID = Component.GetID<T>();
+            ComponentID componentID = Components.GetID<T>();
 
             // Getting entity's archetype & row index
-            if (!m_EntityToArchetype.TryGetValue(entityID, out (Archetype, int) archetypeRecord))
+            if (!storage.EntityToArchetype.TryGetValue(entityID, out (Archetype, int) archetypeRecord))
             {
                 // The entity doesn't have any component yet
                 //Debug.WriteLine($"Error: Archetype for entity {entityID} not found in dictionary");
@@ -85,16 +79,16 @@ namespace neon
             return (T)archetype.Columns[column][row];
         }
 
-		public static T? Add<T>(EntityID entityID) where T : class, IComponent, new() => storage.AddInternal(entityID, new T());
+		public static T? Add<T>(EntityID entityID) where T : class, IComponent, new() => AddInternal(entityID, new T());
 
-        public static T? Add<T>(EntityID entityID, T inputComponent) where T : class, IComponent => storage.AddInternal(entityID, (T)inputComponent.Clone());
+        public static T? Add<T>(EntityID entityID, T inputComponent) where T : class, IComponent => AddInternal(entityID, (T)inputComponent.Clone());
 
-        private T? AddInternal<T>(EntityID entityID, T component) where T : class, IComponent
+        private static T? AddInternal<T>(EntityID entityID, T component) where T : class, IComponent
         {
-            ComponentID componentID = Component.GetID<T>();
+            ComponentID componentID = Components.GetID<T>();
 
             // If the entity isn't recorded yet for having any component
-            if (!m_EntityToArchetype.TryGetValue(entityID, out (Archetype, int) archetypeRecord))
+            if (!storage.EntityToArchetype.TryGetValue(entityID, out (Archetype, int) archetypeRecord))
             {
                 ComponentSet componentSet = new ComponentSet(componentID);
 
@@ -162,14 +156,14 @@ namespace neon
             return component;
         }
 
-        public static void Remove<T>(EntityID entityID) where T : class, IComponent => storage.RemoveInternal<T>(entityID);
+        public static void Remove<T>(EntityID entityID) where T : class, IComponent => RemoveInternal<T>(entityID);
 
-        private void RemoveInternal<T>(EntityID entityID) where T : class, IComponent
+        private static void RemoveInternal<T>(EntityID entityID) where T : class, IComponent
         {
-            ComponentID componentID = Component.GetID<T>();
+            ComponentID componentID = Components.GetID<T>();
 
             // If the entity isn't recorded yet for having any component
-            if (!m_EntityToArchetype.TryGetValue(entityID, out (Archetype, int) archetypeRecord))
+            if (!storage.EntityToArchetype.TryGetValue(entityID, out (Archetype, int) archetypeRecord))
                 return;
 
             (Archetype archetype, int row) = archetypeRecord;
@@ -185,7 +179,7 @@ namespace neon
             if (archetype.ComponentSet.ComponentIDs.Count == 1)
             {
                 RemoveEntityFromArchetype(entityID, archetype, row);
-                m_EntityToArchetype.Remove(entityID);
+                storage.EntityToArchetype.Remove(entityID);
                 return;
             }
 
@@ -218,10 +212,21 @@ namespace neon
             AddEntityToArchetype(entityID, components, nextArchetype);
         }
 
-        private int GetColumn(ComponentID componentID, Archetype archetype)
+        public static void RemoveAll(EntityID entityID)
+        {
+            if (!storage.EntityToArchetype.TryGetValue(entityID, out (Archetype, int) value))
+                return;
+
+            Archetype archetype = value.Item1;
+            int row = value.Item2;
+
+            RemoveEntityFromArchetype(entityID, archetype, row);
+        }
+
+        private static int GetColumn(ComponentID componentID, Archetype archetype)
         {
             // Getting every archetypeID that contains the required component & the component position in their column
-            if (!m_ComponentIDToArchetypeSet.TryGetValue(componentID, out Dictionary<ArchetypeID, int> archetypeSet))
+            if (!storage.ComponentIDToArchetypeSet.TryGetValue(componentID, out Dictionary<ArchetypeID, int> archetypeSet))
                 return -1;
 
             // Getting entity's archetype column for required component
@@ -232,13 +237,13 @@ namespace neon
             return column;
         }
 
-        private Archetype GetOrCreateArchetype(ComponentSet componentSet)
+        private static Archetype GetOrCreateArchetype(ComponentSet componentSet)
         {
             // if there is no archetype registered for this ComponentSet
-            if (!m_ComponentSetToArchetype.TryGetValue(componentSet, out Archetype archetype))
+            if (!storage.ComponentSetToArchetype.TryGetValue(componentSet, out Archetype archetype))
             {
                 archetype = new Archetype(componentSet);
-                m_ComponentSetToArchetype.Add(componentSet, archetype);
+                storage.ComponentSetToArchetype.Add(componentSet, archetype);
 
                 // foreach componentID in componentSet, add lookup data to the componenID-to-archetype-infos dictionary
                 for (int i = 0; i < componentSet.ComponentIDs.Count; i++)
@@ -246,10 +251,10 @@ namespace neon
                     ComponentID componentID = componentSet.ComponentIDs[i];
 
                     // if archetypeSet not yet exists (= first time this componentID is brought to it), create a new one
-                    if (!m_ComponentIDToArchetypeSet.TryGetValue(componentID, out Dictionary<ArchetypeID, int> archetypeSet))
+                    if (!storage.ComponentIDToArchetypeSet.TryGetValue(componentID, out Dictionary<ArchetypeID, int> archetypeSet))
                     {
                         archetypeSet = new Dictionary<ArchetypeID, int>();
-                        m_ComponentIDToArchetypeSet.Add(componentID, archetypeSet);
+                        storage.ComponentIDToArchetypeSet.Add(componentID, archetypeSet);
                     }
 
                     archetypeSet.Add(archetype.ID, i);
@@ -259,31 +264,31 @@ namespace neon
             return archetype;
         }
 
-        private void AddEntityToArchetype(EntityID entityID, List<IComponent> components, Archetype archetype)
+        private static void AddEntityToArchetype(EntityID entityID, List<IComponent> components, Archetype archetype)
         {
             int row = archetype.AddEntity(components);
 
-            m_EntityToArchetype[entityID] = (archetype, row);
+            storage.EntityToArchetype[entityID] = (archetype, row);
 
-            if (!m_ArchetypeToEntities.TryGetValue(archetype, out List<EntityID> entities)) {
+            if (!storage.ArchetypeToEntities.TryGetValue(archetype, out List<EntityID> entities)) {
                 entities = new List<EntityID>();
-                m_ArchetypeToEntities.Add(archetype, entities);
+                storage.ArchetypeToEntities.Add(archetype, entities);
             }
 
             entities.Add(entityID);
         }
 
-        private List<IComponent> RemoveEntityFromArchetype(EntityID entityID, Archetype archetype, int row)
+        private static List<IComponent> RemoveEntityFromArchetype(EntityID entityID, Archetype archetype, int row)
         {
             List<IComponent> components = archetype.RemoveEntity(row);
 
-            m_ArchetypeToEntities[archetype].Remove(entityID);
+            storage.ArchetypeToEntities[archetype].Remove(entityID);
 
-            List<EntityID> entities = m_ArchetypeToEntities[archetype];
+            List<EntityID> entities = storage.ArchetypeToEntities[archetype];
             for (int i = row; i < entities.Count; i++)
             {
-                (Archetype a, int r) = m_EntityToArchetype[entities[i]];
-                m_EntityToArchetype[entities[i]] = (a, r - 1);
+                (Archetype a, int r) = storage.EntityToArchetype[entities[i]];
+                storage.EntityToArchetype[entities[i]] = (a, r - 1);
             }
 
             return components;

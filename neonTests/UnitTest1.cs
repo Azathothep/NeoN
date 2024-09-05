@@ -5,23 +5,9 @@ namespace neoNTests
     [TestClass]
     public class ComponentsTests
     {
-        private void GenerateSingletons()
-        {
-            if (Components.storage == null)
-                new Components();
-
-            if (Component.storage == null)
-                new Component();
-
-            if (Entities.storage == null)
-                new Entities();
-        }
-
         [TestMethod]
         public void SimpleAddTest()
         {
-            GenerateSingletons();
-
             List<EntityID> entities = new List<EntityID>(1000);
 
             for (int i = 0; i < 1000; i++)
@@ -36,13 +22,17 @@ namespace neoNTests
             {
                 Assert.IsNotNull(Components.Get<Transform>(entities[i]));
             }
+
+            for (int i = 0; i < 1000; i++)
+            {
+                EntityID entityID = entities[i];
+                Entities.Destroy(entityID);
+            }
         }
 
         [TestMethod]
         public void ComplexAddTest()
         {
-            GenerateSingletons();
-
             List<EntityID> simpleEntities = new List<EntityID>(500);
             List<EntityID> complexEntities = new List<EntityID>(500);
 
@@ -73,13 +63,23 @@ namespace neoNTests
                 Assert.IsNotNull(Components.Get<Transform>(complexEntities[i]));
                 Assert.IsNotNull(Components.Get<BoxCollider>(complexEntities[i]));
             }
+
+            for (int i = 0; i < simpleEntities.Count; i++)
+            {
+                EntityID entityID = simpleEntities[i];
+                Entities.Destroy(entityID);
+            }
+
+            for (int i = 0; i < complexEntities.Count; i++)
+            {
+                EntityID entityID = complexEntities[i];
+                Entities.Destroy(entityID);
+            }
         }
 
         [TestMethod]
         public void ComplexAddRemoveTest()
         {
-            GenerateSingletons();
-
             List<EntityID> simpleEntities = new List<EntityID>(500);
             List<EntityID> complexEntities = new List<EntityID>(500);
             List<EntityID> voidEntities = new List<EntityID>(500);
@@ -131,6 +131,18 @@ namespace neoNTests
             {
                 Assert.IsNotNull(Components.Get<Transform>(complexEntities[i]));
                 Assert.IsNotNull(Components.Get<BoxCollider>(complexEntities[i]));
+            }
+
+            for (int i = 0; i < simpleEntities.Count; i++)
+            {
+                EntityID entityID = simpleEntities[i];
+                Entities.Destroy(entityID);
+            }
+
+            for (int i = 0; i < complexEntities.Count; i++)
+            {
+                EntityID entityID = complexEntities[i];
+                Entities.Destroy(entityID);
             }
         }
     }

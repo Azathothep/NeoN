@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-
-namespace neon
+﻿namespace neon
 {
     public class Entities
     {
-        public static Entities storage { get; private set; }
+        private class EntitiesStorage
+        {
+            public HashSet<EntityID> EntityIDs = new();
+        }
+
+        private static EntitiesStorage storage = new();
 
         private static Random random = new Random();
-
-        private HashSet<EntityID> m_EntityIDs;
 
         private static UInt32 RandomUInt32()
         {
@@ -20,22 +18,13 @@ namespace neon
             return (thirtyBits << 2) | twoBits;
         }
 
-        public Entities()
-        {
-            if (storage == null)
-            {
-                storage = this;
-            } else
-                throw new InvalidOperationException($"An object of type {this.GetType()} has already been created!");
-
-            m_EntityIDs = new HashSet<EntityID>();
-        }
+        private Entities() { }
 
         public static EntityID GetID()
         {
             UInt32 id = RandomUInt32();
 
-            while (storage.m_EntityIDs.Contains(id))
+            while (storage.EntityIDs.Contains(id))
                 id = RandomUInt32();
 
             //Debug.WriteLine($"New entity created with id {id}");
@@ -43,9 +32,10 @@ namespace neon
             return new EntityID(id);
         }
 
-        public void Destroy(EntityID id)
+        public static void Destroy(EntityID entityID)
         {
-            m_EntityIDs.Remove(id);
+            Components.RemoveAll(entityID);
+            storage.EntityIDs.Remove(entityID);
         }
     }
 }
