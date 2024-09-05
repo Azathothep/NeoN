@@ -7,12 +7,22 @@ using System.Threading.Tasks;
 
 namespace neon
 {
-    public partial class Components
+    public class Component
     {
+        public static Component storage { get; private set; }
+
         private Dictionary<Type, ComponentID> m_ComponentToID = new();
         private Dictionary<ComponentID, Type> m_IDToComponent = new();
 
         private int m_LastID = -1;
+
+        public Component()
+        {
+            if (storage == null)
+                storage = this;
+            else
+                throw new InvalidOperationException($"An object of type {this.GetType()} has already been created!");
+        }
 
         public static Type GetType(ComponentID component)
         {
@@ -44,14 +54,6 @@ namespace neon
             storage.AddUnsafe(componentType, componentID);
 
             return componentID;
-        }
-
-        private void Add<T>(ComponentID id) where T : class, IComponent
-        {
-            Type componentType = typeof(T);
-
-            m_ComponentToID.Add(componentType, id);
-            m_IDToComponent.Add(id, componentType);
         }
 
         private void AddUnsafe(Type componentType, ComponentID id)

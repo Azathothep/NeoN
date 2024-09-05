@@ -6,7 +6,7 @@ using System.Dynamic;
 
 namespace neon
 {
-    public partial class Components
+    public class Components
     {
         public static Components storage { get; private set; }
 
@@ -28,9 +28,9 @@ namespace neon
 
 
 
-        public static bool HasComponent<T>(EntityID entityID) where T : class, IComponent
+        public static bool Has<T>(EntityID entityID) where T : class, IComponent
         {
-            ComponentID componentID = Components.GetID<T>();
+            ComponentID componentID = Component.GetID<T>();
 
             // Getting entity's archetype & row index
             if (!storage.m_EntityToArchetype.TryGetValue(entityID, out (Archetype, int) archetypeRecord))
@@ -52,11 +52,17 @@ namespace neon
             return archetypeSet.ContainsKey(archetype.ID);
         }
 
-        public static T Get<T>(EntityID entityID) where T : class, IComponent => storage.GetInternal<T>(entityID);
+        public static T? Get<T>(EntityID entityID) where T : class, IComponent => storage.GetInternal<T>(entityID);
 
-        private T GetInternal<T>(EntityID entityID) where T : class, IComponent
+        public static bool TryGet<T>(EntityID entityID, out T? result) where T : class, IComponent
         {
-            ComponentID componentID = Components.GetID<T>();
+            result = storage.GetInternal<T>(entityID);
+            return result != null;
+        }
+
+        private T? GetInternal<T>(EntityID entityID) where T : class, IComponent
+        {
+            ComponentID componentID = Component.GetID<T>();
 
             // Getting entity's archetype & row index
             if (!m_EntityToArchetype.TryGetValue(entityID, out (Archetype, int) archetypeRecord))
@@ -79,13 +85,13 @@ namespace neon
             return (T)archetype.Columns[column][row];
         }
 
-		public static T Add<T>(EntityID entityID) where T : class, IComponent, new() => storage.AddInternal(entityID, new T());
+		public static T? Add<T>(EntityID entityID) where T : class, IComponent, new() => storage.AddInternal(entityID, new T());
 
-        public static T Add<T>(EntityID entityID, T inputComponent) where T : class, IComponent => storage.AddInternal(entityID, (T)inputComponent.Clone());
+        public static T? Add<T>(EntityID entityID, T inputComponent) where T : class, IComponent => storage.AddInternal(entityID, (T)inputComponent.Clone());
 
-        private T AddInternal<T>(EntityID entityID, T component) where T : class, IComponent
+        private T? AddInternal<T>(EntityID entityID, T component) where T : class, IComponent
         {
-            ComponentID componentID = Components.GetID<T>();
+            ComponentID componentID = Component.GetID<T>();
 
             // If the entity isn't recorded yet for having any component
             if (!m_EntityToArchetype.TryGetValue(entityID, out (Archetype, int) archetypeRecord))
@@ -160,7 +166,7 @@ namespace neon
 
         private void RemoveInternal<T>(EntityID entityID) where T : class, IComponent
         {
-            ComponentID componentID = Components.GetID<T>();
+            ComponentID componentID = Component.GetID<T>();
 
             // If the entity isn't recorded yet for having any component
             if (!m_EntityToArchetype.TryGetValue(entityID, out (Archetype, int) archetypeRecord))

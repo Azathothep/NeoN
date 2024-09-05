@@ -10,23 +10,23 @@ namespace neon
 
     public class Archetypes
     {
-        public static Archetypes instance { get; private set; }
+        private static Archetypes storage;
 
         private int m_LastID = -1;
 
         public Archetypes() {
-            if (instance == null)
-                instance = this;
+            if (storage == null)
+                storage = this;
             else
                 throw new InvalidOperationException($"An object of type {this.GetType()} has already been created!");
         }
 
         public static ArchetypeID GetID()
         {
-            if (instance == null)
+            if (storage == null)
                 new Archetypes();
 
-            return new ArchetypeID(++instance.m_LastID);
+            return new ArchetypeID(++storage.m_LastID);
         }
     }
 }

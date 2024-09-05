@@ -5,11 +5,22 @@ namespace neoNTests
     [TestClass]
     public class ComponentsTests
     {
+        private void GenerateSingletons()
+        {
+            if (Components.storage == null)
+                new Components();
+
+            if (Component.storage == null)
+                new Component();
+
+            if (Entities.storage == null)
+                new Entities();
+        }
+
         [TestMethod]
         public void SimpleAddTest()
         {
-            if (Components.storage == null) new Components();
-            if (Entities.instance == null) new Entities();
+            GenerateSingletons();
 
             List<EntityID> entities = new List<EntityID>(1000);
 
@@ -30,8 +41,7 @@ namespace neoNTests
         [TestMethod]
         public void ComplexAddTest()
         {
-            if (Components.storage == null) new Components();
-            if (Entities.instance == null) new Entities();
+            GenerateSingletons();
 
             List<EntityID> simpleEntities = new List<EntityID>(500);
             List<EntityID> complexEntities = new List<EntityID>(500);
@@ -68,8 +78,7 @@ namespace neoNTests
         [TestMethod]
         public void ComplexAddRemoveTest()
         {
-            if (Components.storage == null) new Components();
-            if (Entities.instance == null) new Entities();
+            GenerateSingletons();
 
             List<EntityID> simpleEntities = new List<EntityID>(500);
             List<EntityID> complexEntities = new List<EntityID>(500);

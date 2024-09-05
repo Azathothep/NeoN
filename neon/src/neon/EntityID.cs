@@ -6,21 +6,26 @@ namespace neon
 {
     public class EntityID
     {
-        private string value;
+        private UInt32 value;
 
-        public EntityID(string value)
+        public EntityID(UInt32 value)
         {
             this.value = value;
         }
 
-        public static implicit operator string(EntityID entity)
+        public static implicit operator UInt32(EntityID entity)
         {
             return entity.value;
         }
 
-        public static implicit operator EntityID(string value)
+        public static implicit operator EntityID(UInt32 value)
         {
             return new EntityID(value);
+        }
+
+        public override int GetHashCode()
+        {
+            return value.GetHashCode();
         }
     }
 }
