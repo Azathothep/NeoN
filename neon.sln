@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33213.308
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "neon", "neon\neon.csproj", "{1A8620D2-192E-474D-A10C-2B0E7CFCECAF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "neonTests", "neonTests\neonTests.csproj", "{2D96EA6A-BE4D-4F85-B4A8-6A6D0835AA5B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1A8620D2-192E-474D-A10C-2B0E7CFCECAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A8620D2-192E-474D-A10C-2B0E7CFCECAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A8620D2-192E-474D-A10C-2B0E7CFCECAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A8620D2-192E-474D-A10C-2B0E7CFCECAF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D96EA6A-BE4D-4F85-B4A8-6A6D0835AA5B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D96EA6A-BE4D-4F85-B4A8-6A6D0835AA5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D96EA6A-BE4D-4F85-B4A8-6A6D0835AA5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D96EA6A-BE4D-4F85-B4A8-6A6D0835AA5B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1B471CA5-4CF9-49B3-98D8-994599083313}
+	EndGlobalSection
+EndGlobal
