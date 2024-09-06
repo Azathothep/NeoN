@@ -18,6 +18,9 @@ namespace neon
             public Dictionary<ComponentID, Dictionary<ArchetypeID, int>> ComponentIDToArchetypeSet = new();
         }
 
+        // Get all existing component sets responding to filter
+        // Then, fetch all archetypes
+
         private static ComponentsStorage storage = new();
 
         private Components() { }
@@ -292,6 +295,22 @@ namespace neon
             }
 
             return components;
+        }
+
+        public static (Archetype, List<EntityID>)[] RequestArchetypes(IQuery query)
+        {
+            List<(Archetype, List<EntityID>)> archetypes = new();
+
+            foreach (var kv in storage.ComponentSetToArchetype)
+            {
+                if (kv.Key.Satisfy(query))
+                {
+                    Archetype archetype = kv.Value;
+                    archetypes.Add((archetype, storage.ArchetypeToEntities[archetype]));
+                }
+            }
+
+            return archetypes.ToArray();
         }
     }
 }

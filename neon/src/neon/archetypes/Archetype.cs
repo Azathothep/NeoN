@@ -26,6 +26,8 @@ namespace neon
         private Dictionary<ComponentID, ArchetypeEdges> m_Edges = new();
         public Dictionary<ComponentID, ArchetypeEdges> Edges => m_Edges;
 
+        public int EntityCount => m_Columns[0].Count;
+
         public Archetype(ComponentSet componentSet)
         {
             m_ID = Archetypes.GetID();

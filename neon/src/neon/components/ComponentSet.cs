@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.SymbolStore;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -46,6 +47,33 @@ namespace neon
             List<ComponentID> newList = new List<ComponentID>(m_ComponentIDs);
             newList.Remove(componentID);
             return new ComponentSet(newList);
+        }
+
+        public bool Contains(ComponentID componentID)
+        {
+            return m_ComponentIDs.Contains(componentID);
+        }
+
+        public bool Satisfy(IQuery query)
+        {
+            for (int i = 0; i < query.Filters.Length; i++)
+            {
+                switch (query.Filters[i].Term)
+                {
+                    case FilterTerm.Has:
+                        if (!this.Contains(query.Filters[i].ComponentID))
+                            return false;
+                        break;
+                    case FilterTerm.HasNot:
+                        if (this.Contains(query.Filters[i].ComponentID))
+                            return false;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            return true;
         }
 
         public override bool Equals(object obj)

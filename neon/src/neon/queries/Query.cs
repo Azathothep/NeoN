@@ -5,46 +5,71 @@ using System.Linq;
 
 namespace neon
 {
-    public class Query<T1, T2> : IQuery, IEquatable< Query<T1, T2> >
+    public class Query<T1, T2> : IQuery where T1 : class, IComponent where T2 : class, IComponent
     {
-        private int m_HashCode;
+        private IQueryFilter[] m_Filters;
+        public IQueryFilter[] Filters => m_Filters;
 
-        private Filter[] m_Filters;
-        public Filter[] Filters => m_Filters;
-
-        public Query(Filter[] filters)
+        public Query()
         {
-            m_Filters = filters;
-
-            m_HashCode = BuildHash(filters);
-
-            Debug.WriteLine($"New query created with hashCode: {m_HashCode}");
+            m_Filters = MakeFilters();
         }
 
-        private int BuildHash(Filter[] filters)
+        public Query(IQueryFilter[] filters)
         {
-            if (filters.Length == 0)
-                return 0;
+            m_Filters = MakeFilters(filters);
 
-            if (filters.Length == 1)
-                return filters.GetHashCode();
+            Debug.WriteLine($"New query created with hashCode: {this.GetHashCode()}");
+        }
 
-            int hash = Hashing.HashPair((short)filters[0].GetHashCode(), (short)filters[1].GetHashCode());
-
-            for (int i = 2; i < filters.Length; i++)
+        private IQueryFilter[] MakeFilters()
+        {
+            List<ComponentID> baseComponentIDs = new List<ComponentID>
             {
-                hash = Hashing.HashPair((short)hash, (short)filters[i].GetHashCode());
+                Components.GetID<T1>(),
+                Components.GetID<T2>()
+            };
+
+            List<IQueryFilter> queryFilters = new();
+
+            for (int i = 0; i < baseComponentIDs.Count; i++)
+            {
+                queryFilters.Add(new QueryFilterType(baseComponentIDs[i], FilterTerm.Has));
             }
 
-            return hash;
+            return queryFilters.ToArray();
         }
 
-        public bool Equals(Query<T1, T2> other)
+        private IQueryFilter[] MakeFilters(IQueryFilter[] filters)
         {
+            List<ComponentID> baseComponentIDs = new List<ComponentID>
+            {
+                Components.GetID<T1>(),
+                Components.GetID<T2>()
+            };
+
+            List<IQueryFilter> queryFilters = new List<IQueryFilter>(filters);
+
+            for (int i = 0; i < baseComponentIDs.Count; i++)
+            {
+                if (queryFilters.Find((f) => f.ComponentID == baseComponentIDs[i]) == null)
+                    queryFilters.Add(new QueryFilterType(baseComponentIDs[i], FilterTerm.Has));
+            }
+
+            return queryFilters.ToArray();
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is not Query<T1, T2>)
+                return false;
+
+            Query<T1, T2> other = (Query<T1, T2>)obj;
+
             if (this.Filters.Length != other.Filters.Length)
                 return false;
 
-            List<Filter> filterList = other.Filters.ToList();
+            List<IQueryFilter> filterList = other.Filters.ToList();
 
             for (int i = 0; i < this.Filters.Length; i++)
             {
@@ -57,22 +82,17 @@ namespace neon
             return true;
         }
 
-        public bool Equals(IQuery other)
-        {
-            if (other is not Query<T1, T2>)
-                return false;
-
-            return Equals((Query<T1, T2>)other);
-        }
-
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as Query<T1, T2>);
-        }
-
         public override int GetHashCode()
         {
-            return m_HashCode;
+            unchecked
+            {
+                int hashCode = 190633;
+
+                for (int i = 0; i < m_Filters.Length; i++)
+                    hashCode = hashCode * 7194917 ^ m_Filters[i].GetHashCode();
+
+                return hashCode;
+            }
         }
     }
 }

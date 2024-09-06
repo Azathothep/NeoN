@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 
 namespace neon
 {
-    public interface IQuery
+    public interface IQueryFilter
     {
-        public IQueryFilter[] Filters { get; }
+        public FilterTerm Term { get; }
+
+        public ComponentID ComponentID { get; }
     }
 }
