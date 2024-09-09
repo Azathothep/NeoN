@@ -367,5 +367,61 @@ namespace neon
 
             return archetypes.ToArray();
         }
+
+        public static (T1?, T2?) Get<T1, T2>(EntityID entityID) where T1 : class, IComponent where T2 : class, IComponent
+        {
+            object[] rawComponents = GetComponentsInternal(entityID, new ComponentID[]
+            {
+                Components.GetID<T1>(),
+                Components.GetID<T2>()
+            });
+
+            return ((T1)rawComponents[0], ((T2)rawComponents[1]));
+        }
+
+        public static (T1?, T2?, T3?) Get<T1, T2, T3>(EntityID entityID) where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent
+        {
+            object[] rawComponents = GetComponentsInternal(entityID, new ComponentID[]
+            {
+                Components.GetID<T1>(),
+                Components.GetID<T2>(),
+                Components.GetID<T3>()
+            });
+
+            return ((T1)rawComponents[0], (T2)rawComponents[1], (T3)rawComponents[2]);
+        }
+
+        public static (T1?, T2?, T3?, T4?) Get<T1, T2, T3, T4>(EntityID entityID) where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent where T4 : class, IComponent
+        {
+            object[] rawComponents = GetComponentsInternal(entityID, new ComponentID[]
+            {
+                Components.GetID<T1>(),
+                Components.GetID<T2>(),
+                Components.GetID<T3>(),
+                Components.GetID<T4>()
+            });
+
+            return ((T1)rawComponents[0], (T2)rawComponents[1], (T3)rawComponents[2], (T4)rawComponents[3]);
+        }
+
+        private static object[] GetComponentsInternal(EntityID entityID, ComponentID[] componentIDs)
+        {
+            object[] components = new object[componentIDs.Length];
+
+            (Archetype, int) archetypeRecord = storage.EntityToArchetype[entityID];
+
+            Archetype archetype = archetypeRecord.Item1;
+            int row = archetypeRecord.Item2;
+
+            for (int i = 0; i < componentIDs.Length; i++)
+            {
+                Dictionary<ArchetypeID, int> componentArchetypes = storage.ComponentIDToArchetypeSet[componentIDs[i]];
+
+                if (componentArchetypes.TryGetValue(archetype.ID, out int column))
+                    components[i] = archetype.Columns[column][row];
+            }
+
+            return components;
+        }
     }
 }

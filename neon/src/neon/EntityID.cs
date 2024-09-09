@@ -18,6 +18,14 @@ namespace neon
         public T? Add<T>(T inputComponent) where T : class, IComponent => neon.Components.Add<T>(this, inputComponent);
 
         public T? Get<T>() where T : class, IComponent => neon.Components.Get<T>(this);
+
+        public (T1?, T2?) Get<T1, T2>() where T1 : class, IComponent where T2 : class, IComponent => neon.Components.Get<T1, T2>(this);
+
+        public (T1?, T2?, T3?) Get<T1, T2, T3>() where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent => neon.Components.Get<T1, T2, T3>(this);
+
+        public (T1?, T2?, T3?, T4?) Get<T1, T2, T3, T4>() where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent where T4 : class, IComponent => neon.Components.Get<T1, T2, T3, T4>(this);
+
+
         public void Remove<T>() where T : class, IComponent => neon.Components.Remove<T>(this);
 
         public EntityID? GetParent() => neon.Entities.GetParent(this);
