@@ -20,6 +20,12 @@ namespace neon
         public T? Get<T>() where T : class, IComponent => neon.Components.Get<T>(this);
         public void Remove<T>() where T : class, IComponent => neon.Components.Remove<T>(this);
 
+        public EntityID? GetParent() => neon.Entities.GetParent(this);
+        public HashSet<EntityID> GetChildren() => neon.Entities.GetChildren(this);
+
+        public void SetParent(EntityID parentID) => neon.Entities.SetRelation(parentID, this);
+        public void SetChild(EntityID childID) => neon.Entities.SetRelation(this, childID);
+
         public static implicit operator UInt32(EntityID entity)
         {
             return entity.m_ID;
