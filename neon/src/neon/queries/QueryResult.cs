@@ -12,7 +12,7 @@ namespace neon
 
     public class QueryResult<T1, T2> : IQueryResult, IEnumerable<(EntityID, T1, T2)> where T1 : class, IComponent where T2 : class, IComponent
     {
-        private class QueryResultEnumerator : IEnumerator<(EntityID, T1, T2)> // Make generic, recast everything past
+        private class QueryResultEnumerator : IEnumerator<(EntityID, T1?, T2?)> // Make generic, recast everything past
         {
             private (Archetype, List<EntityID>)[] m_Archetypes; // List<EntityID> must stay List ? Maybe dangerous ?
 
@@ -39,7 +39,7 @@ namespace neon
                 m_ColumnIndices = GetIndices(archetypes[0].Item1);
             }
 
-            public (EntityID, T1, T2) Current => GetAt(m_ArchetypeIndex, m_ArchetypePosition, m_ColumnIndices);
+            public (EntityID, T1?, T2?) Current => GetCurrentResult();
 
             object IEnumerator.Current => Current;
 
@@ -72,31 +72,27 @@ namespace neon
                 m_ArchetypePosition = -1;
             }
 
-            private (EntityID, T1, T2) GetAt(int archetypeIndex, int archetypePosition, int[] columnIndices)
+            private (EntityID, T1?, T2?) GetCurrentResult()
             {
-                return (m_Archetypes[archetypeIndex].Item2[archetypePosition],
-                    (T1)m_Archetypes[archetypeIndex].Item1.Columns[columnIndices[0]][archetypePosition],
-                    (T2)m_Archetypes[archetypeIndex].Item1.Columns[columnIndices[1]][archetypePosition]);
+                return (m_Archetypes[m_ArchetypeIndex].Item2[m_ArchetypePosition],
+                    Get<T1>(m_ColumnIndices[0]),
+                    Get<T2>(m_ColumnIndices[1]));
+            }
+            private T? Get<T>(int columnIndice) where T : class, IComponent
+            {
+                if (columnIndice < 0)
+                    return null;
+
+                return (T)m_Archetypes[m_ArchetypeIndex].Item1.Columns[columnIndice][m_ArchetypePosition];
             }
 
             private int[] GetIndices(Archetype archetype)
             {
                 int[] indices = new int[2];
 
-                int queryIDIndex = 0;
-
                 List<ComponentID> componentIDs = archetype.ComponentSet.ComponentIDs;
-                for (int i = 0; i < componentIDs.Count; i++)
-                {
-                    if (m_ComponentIDs[queryIDIndex] == componentIDs[i])
-                    {
-                        indices[queryIDIndex] = i;
-                        queryIDIndex++;
-
-                        if (queryIDIndex >= m_ComponentIDs.Length)
-                            break;
-                    }
-                }
+                for (int i = 0; i < m_ComponentIDs.Length; i++)
+                    indices[i] = componentIDs.IndexOf(m_ComponentIDs[i]);
 
                 return indices;
             }

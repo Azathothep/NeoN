@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Dynamic;
+using System.Globalization;
 
 namespace neon
 {
@@ -16,7 +17,10 @@ namespace neon
             public Dictionary<ComponentSet, Archetype> ComponentSetToArchetype = new();
 
             public Dictionary<ComponentID, Dictionary<ArchetypeID, int>> ComponentIDToArchetypeSet = new();
+
+            public Dictionary<ArchetypeID, Archetype> ArchetypeIDToArchetype = new();
         }
+
 
         // Get all existing component sets responding to filter
         // Then, fetch all archetypes
@@ -247,6 +251,7 @@ namespace neon
             {
                 archetype = new Archetype(componentSet);
                 storage.ComponentSetToArchetype.Add(componentSet, archetype);
+                storage.ArchetypeIDToArchetype.Add(archetype.ID, archetype);
 
                 // foreach componentID in componentSet, add lookup data to the componenID-to-archetype-infos dictionary
                 for (int i = 0; i < componentSet.ComponentIDs.Count; i++)
@@ -254,6 +259,7 @@ namespace neon
                     ComponentID componentID = componentSet.ComponentIDs[i];
 
                     // if archetypeSet not yet exists (= first time this componentID is brought to it), create a new one
+
                     if (!storage.ComponentIDToArchetypeSet.TryGetValue(componentID, out Dictionary<ArchetypeID, int> archetypeSet))
                     {
                         archetypeSet = new Dictionary<ArchetypeID, int>();
@@ -301,13 +307,62 @@ namespace neon
         {
             List<(Archetype, List<EntityID>)> archetypes = new();
 
-            foreach (var kv in storage.ComponentSetToArchetype)
+            List<ArchetypeID> archetypesLeft = new();
+
+            int filterIndex = 0;
+
+            if (query.Filters[0].Term == FilterTerm.Has)
             {
-                if (kv.Key.Satisfy(query))
+                Dictionary<ArchetypeID, int> satisfyingArchetypes = storage.ComponentIDToArchetypeSet[query.Filters[0].ComponentID];
+
+                foreach (var a in satisfyingArchetypes)
+                    archetypesLeft.Add(a.Key);
+
+                filterIndex = 1;
+            } else
+            {
+                foreach (var a in storage.ArchetypeIDToArchetype)
+                    archetypesLeft.Add(a.Key);
+            }
+
+            // Remove all that has not
+            
+            for (; filterIndex < query.Filters.Length; filterIndex++)
+            {
+                if (query.Filters[filterIndex].Term != FilterTerm.Has)
+                    break;
+
+                Dictionary<ArchetypeID, int> satisfyingArchetypes = storage.ComponentIDToArchetypeSet[query.Filters[filterIndex].ComponentID];
+
+                for (int j = archetypesLeft.Count - 1; j >= 0; j--)
                 {
-                    Archetype archetype = kv.Value;
-                    archetypes.Add((archetype, storage.ArchetypeToEntities[archetype]));
+                    if (satisfyingArchetypes.ContainsKey(archetypesLeft[j]) == false)
+                        archetypesLeft.RemoveAt(j);
                 }
+            }
+
+            // Remove all that has
+
+            for (; filterIndex < query.Filters.Length; filterIndex++)
+            {
+                if (query.Filters[filterIndex].Term != FilterTerm.HasNot)
+                    break;
+
+                Dictionary<ArchetypeID, int> satisfyingArchetypes = storage.ComponentIDToArchetypeSet[query.Filters[filterIndex].ComponentID];
+
+                for (int j = archetypesLeft.Count - 1; j >= 0; j--)
+                {
+                    if (satisfyingArchetypes.ContainsKey(archetypesLeft[j]))
+                        archetypesLeft.RemoveAt(j);
+                }
+            }
+
+            for (int j = 0; j < archetypesLeft.Count; j++)
+            {
+                Archetype archetype = storage.ArchetypeIDToArchetype[archetypesLeft[j]];
+                List<EntityID> entities = storage.ArchetypeToEntities[archetype];
+
+                archetypes.Add((archetype, entities));
             }
 
             return archetypes.ToArray();

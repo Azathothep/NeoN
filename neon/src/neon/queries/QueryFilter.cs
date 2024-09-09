@@ -7,7 +7,8 @@ namespace neon
     public enum FilterTerm
     {
         Has,
-        HasNot
+        HasNot,
+        MightHave
     }
 
     public struct QueryFilter<T> : IQueryFilter where T : class, IComponent
