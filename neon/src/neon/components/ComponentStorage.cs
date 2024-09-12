@@ -6,7 +6,7 @@ using System.Linq;
 namespace neon
 {
     // The component storage architecture has been created following Sander Mertens' (creator or FLECS) "Building an ECS" article series
-    // You can find the first one here : https://ajmmertens.medium.com/building-an-ecs-1-where-are-my-entities-and-components-63d07c7da742
+    // You can read the first one here : https://ajmmertens.medium.com/building-an-ecs-1-where-are-my-entities-and-components-63d07c7da742
 
     public class ComponentStorage : IComponentStorage
     {
@@ -226,6 +226,8 @@ namespace neon
 
         public T? Add<T>(EntityID entityID, T component) where T : class, IComponent
         {
+            component.ID = Entities.GetID();
+
             ComponentID componentID = Components.GetID<T>();
 
             // If the entity isn't recorded yet for having any component
@@ -248,6 +250,7 @@ namespace neon
                     if (archetype.ComponentSet.ComponentIDs.Contains(componentID))
                     {
                         // Already has this component
+
                         int column = GetColumn(componentID, archetype);
                         archetype.Columns[column][row] = component; // Replace ? Or leave unchecked ?
                         return component;
@@ -359,7 +362,12 @@ namespace neon
             Archetype archetype = value.Item1;
             int row = value.Item2;
 
-            RemoveEntityFromArchetype(entityID, archetype, row);
+            List<IComponent> components = RemoveEntityFromArchetype(entityID, archetype, row);
+
+            for (int i = 0; i < components.Count; i++)
+            {
+                Entities.Destroy(components[i].ID);
+            }
         }
 
         public object[] GetComponentsInternal(EntityID entityID, ComponentID[] componentIDs)

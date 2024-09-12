@@ -6,12 +6,30 @@ namespace neon
 {
     public class EntityID
     {
-        private UInt32 m_ID;
-        public UInt32 ID => m_ID;
+        private UInt64 m_ID;
+
+        public enum Flag
+        {
+            Enabled = 1
+        }
+
+        public bool enabled
+        {
+            get => (m_ID & (ulong)Flag.Enabled) == 1; // Checking if last bit of ID is 1 or 0
+            set {
+                if (value == true)
+                {
+                    m_ID = m_ID | (ulong)Flag.Enabled;
+                } else
+                {
+                    m_ID = m_ID & ~(ulong)Flag.Enabled;
+                }
+            }
+        }
 
         public EntityID(UInt32 value)
         {
-            this.m_ID = value;
+            this.m_ID = (value << 32) + 1; // Shifting ID by 32 bits to the left, + 1 to set is as enabled
         }
 
         public T? Add<T>() where T : class, IComponent, new() => neon.Components.Add<T>(this);
@@ -36,7 +54,7 @@ namespace neon
 
         public static implicit operator UInt32(EntityID entity)
         {
-            return entity.m_ID;
+            return (UInt32)(entity.m_ID >> 32);
         }
 
         public static implicit operator EntityID(UInt32 value)
@@ -46,7 +64,7 @@ namespace neon
 
         public override int GetHashCode()
         {
-            return m_ID.GetHashCode();
+            return ((UInt32)(m_ID >> 32)).GetHashCode();
         }
     }
 }
