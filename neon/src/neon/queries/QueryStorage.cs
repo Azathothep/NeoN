@@ -59,11 +59,11 @@ namespace neon
 
         private void OnComponentStorageModified(ComponentID componentID)
         {
-            if (m_ComponentIDToQueryResults.TryGetValue(componentID, out HashSet<IQueryResult> resultSet))
+/*            if (m_ComponentIDToQueryResults.TryGetValue(componentID, out HashSet<IQueryResult> resultSet))
             {
                 foreach (var result in resultSet)
                     result.SetDirty();
-            }
+            }*/
         }
     }
 }

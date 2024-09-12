@@ -35,35 +35,35 @@ namespace neon
                 }
             }
 
-            public IComponentIterator Get<T>(IQueryFilter[] filters, QueryType queryType) where T : class, IComponent
+            public IComponentIterator Get<T>(IQuery query, QueryType queryType) where T : class, IComponent
             {
-                IComponentIterator iterableQuery = new ComponentIterator<T>(() => RequestArchetypes(filters));
+                IComponentIterator iterableQuery = new ComponentIterator<T>(() => RequestArchetypes(query.Filters), query.IncludeInactive);
                 if (queryType == QueryType.Cached)
-                    AddIterableToCollection(filters, iterableQuery);
+                    AddIterableToCollection(query.Filters, iterableQuery);
                 return iterableQuery;
             }
 
-            public IComponentIterator Get<T1, T2>(IQueryFilter[] filters, QueryType queryType) where T1 : class, IComponent where T2 : class, IComponent
+            public IComponentIterator Get<T1, T2>(IQuery query, QueryType queryType) where T1 : class, IComponent where T2 : class, IComponent
             {
-                IComponentIterator iterableQuery = new ComponentIterator<T1, T2>(() => RequestArchetypes(filters));
+                IComponentIterator iterableQuery = new ComponentIterator<T1, T2>(() => RequestArchetypes(query.Filters), query.IncludeInactive);
                 if (queryType == QueryType.Cached)
-                    AddIterableToCollection(filters, iterableQuery);
+                    AddIterableToCollection(query.Filters, iterableQuery);
                 return iterableQuery;
             }
 
-            public IComponentIterator Get<T1, T2, T3>(IQueryFilter[] filters, QueryType queryType) where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent
+            public IComponentIterator Get<T1, T2, T3>(IQuery query, QueryType queryType) where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent
             {
-                IComponentIterator iterableQuery = new ComponentIterator<T1, T2, T3>(() => RequestArchetypes(filters));
+                IComponentIterator iterableQuery = new ComponentIterator<T1, T2, T3>(() => RequestArchetypes(query.Filters), query.IncludeInactive);
                 if (queryType == QueryType.Cached)
-                    AddIterableToCollection(filters, iterableQuery);
+                    AddIterableToCollection(query.Filters, iterableQuery);
                 return iterableQuery;
             }
 
-            public IComponentIterator Get<T1, T2, T3, T4>(IQueryFilter[] filters, QueryType queryType) where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent where T4 : class, IComponent
+            public IComponentIterator Get<T1, T2, T3, T4>(IQuery query, QueryType queryType) where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent where T4 : class, IComponent
             {
-                IComponentIterator iterableQuery = new ComponentIterator<T1, T2, T3, T4>(() => RequestArchetypes(filters));
+                IComponentIterator iterableQuery = new ComponentIterator<T1, T2, T3, T4>(() => RequestArchetypes(query.Filters), query.IncludeInactive);
                 if (queryType == QueryType.Cached)
-                    AddIterableToCollection(filters, iterableQuery);
+                    AddIterableToCollection(query.Filters, iterableQuery);
                 return iterableQuery;
             }
 

@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace neon
 {
@@ -78,14 +79,14 @@ namespace neon
 
         protected IEnumerator<T> GetEnumerator<T>()
         {
-			if (m_Mode == QueryResultMode.Safe && !m_IsDirty)
+/*			if (m_Mode == QueryResultMode.Safe && !m_IsDirty)
 			{
 				return (IEnumerator<T>)m_Storage.GetEnumerator();
-			}
+			}*/
 
 			var enumerator = (IEnumerator<T>)m_IterableQuery.Create();
 
-			if (m_Mode == QueryResultMode.Safe) // && is dirty
+			if (m_Mode == QueryResultMode.Safe) // && is dirty DOESN'T UPDATE IF DIABLING COMPONENT OR ENTITY
 			{
 				m_Storage = MakeStorage(enumerator);
                 m_IsDirty = false;

@@ -25,7 +25,7 @@ namespace neon
             return (IEnumerable<(EntityID, T1)>)
                 storage.Get(query, queryType, (provider) =>
                 {
-                    IComponentIterator iterator = provider.Get<T1>(query.Filters, queryType);
+                    IComponentIterator iterator = provider.Get<T1>(query, queryType);
                     return new QueryResult<T1>(iterator, mode);
                 }
             );
@@ -36,7 +36,7 @@ namespace neon
             return (IEnumerable<(EntityID, T1, T2)>)
                 storage.Get(query, queryType, (provider) =>
                 {
-                    IComponentIterator iterator = provider.Get<T1, T2>(query.Filters, queryType);
+                    IComponentIterator iterator = provider.Get<T1, T2>(query, queryType);
                     return new QueryResult<T1, T2>(iterator, mode);
                 }
             );
@@ -47,7 +47,7 @@ namespace neon
             return (IEnumerable<(EntityID, T1, T2, T3)>)
                 storage.Get(query, queryType, (provider) =>
                 {
-                    IComponentIterator iterator = provider.Get<T1, T2, T3>(query.Filters, queryType);
+                    IComponentIterator iterator = provider.Get<T1, T2, T3>(query, queryType);
                     return new QueryResult<T1, T2, T3>(iterator, mode);
                 }
             );
@@ -58,7 +58,7 @@ namespace neon
             return (IEnumerable<(EntityID, T1, T2, T3, T4)>)
                 storage.Get(query, queryType, (provider) =>
                 {
-                    IComponentIterator iterator = provider.Get<T1, T2, T3, T4>(query.Filters, queryType);
+                    IComponentIterator iterator = provider.Get<T1, T2, T3, T4>(query, queryType);
                     return new QueryResult<T1, T2, T3, T4>(iterator, mode);
                 }
             );

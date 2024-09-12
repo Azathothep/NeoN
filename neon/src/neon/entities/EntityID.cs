@@ -17,10 +17,10 @@ namespace neon
         {
             get => (m_ID & (ulong)Flag.Enabled) == 1; // Checking if last bit of ID is 1 or 0
             set {
-                if (value == true)
+                if (!enabled && value == true)
                 {
                     m_ID = m_ID | (ulong)Flag.Enabled;
-                } else
+                } else if (enabled && value == false)
                 {
                     m_ID = m_ID & ~(ulong)Flag.Enabled;
                 }
@@ -29,7 +29,7 @@ namespace neon
 
         public EntityID(UInt32 value)
         {
-            this.m_ID = (value << 32) + 1; // Shifting ID by 32 bits to the left, + 1 to set is as enabled
+            this.m_ID = (value << 32) | 1; // Shifting ID by 32 bits to the left, + 1 to set is as enabled
         }
 
         public T? Add<T>() where T : class, IComponent, new() => neon.Components.Add<T>(this);

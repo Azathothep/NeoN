@@ -8,6 +8,8 @@ namespace neon
 {
     public interface IQuery
     {
+        public bool IncludeInactive { get; }
+
         public IQueryFilter[] Filters { get; }
 
         public ComponentID[] ReturnValues { get; }

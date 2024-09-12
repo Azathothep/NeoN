@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,7 +11,7 @@ namespace neon
 {
     public class QueryIterator<T> : QueryIterator, IEnumerator<(EntityID, T?)> where T : class, IComponent
     {
-        public QueryIterator((Archetype, List<EntityID>)[] archetypes) : base(archetypes, new ComponentID[] { Components.GetID<T>() })
+        public QueryIterator((Archetype, List<EntityID>)[] archetypes, bool includeInactive) : base(archetypes, new ComponentID[] { Components.GetID<T>() }, includeInactive)
         { }
 
         public (EntityID, T?) Current => GetCurrentResult<T>();
@@ -19,7 +21,7 @@ namespace neon
 
     public class QueryIterator<T1, T2> : QueryIterator, IEnumerator<(EntityID, T1?, T2?)> where T1 : class, IComponent where T2 : class, IComponent
     {
-        public QueryIterator((Archetype, List<EntityID>)[] archetypes) : base(archetypes, new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>() })
+        public QueryIterator((Archetype, List<EntityID>)[] archetypes, bool includeInactive) : base(archetypes, new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>() }, includeInactive)
         { }
 
         public (EntityID, T1?, T2?) Current => GetCurrentResult<T1, T2>();
@@ -29,7 +31,7 @@ namespace neon
 
     public class QueryIterator<T1, T2, T3> : QueryIterator, IEnumerator<(EntityID, T1?, T2?, T3?)> where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent
     {
-        public QueryIterator((Archetype, List<EntityID>)[] archetypes) : base(archetypes, new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>(), Components.GetID<T3>() })
+        public QueryIterator((Archetype, List<EntityID>)[] archetypes, bool includeInactive) : base(archetypes, new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>(), Components.GetID<T3>() }, includeInactive)
         { }
 
         public (EntityID, T1?, T2?, T3?) Current => GetCurrentResult<T1, T2, T3>();
@@ -39,7 +41,7 @@ namespace neon
 
     public class QueryIterator<T1, T2, T3, T4> : QueryIterator, IEnumerator<(EntityID, T1?, T2?, T3?, T4?)> where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent where T4 : class, IComponent
     {
-        public QueryIterator((Archetype, List<EntityID>)[] archetypes) : base(archetypes, new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>(), Components.GetID<T3>(), Components.GetID<T4>() })
+        public QueryIterator((Archetype, List<EntityID>)[] archetypes, bool includeInactive) : base(archetypes, new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>(), Components.GetID<T3>(), Components.GetID<T4>() }, includeInactive)
         { }
 
         public (EntityID, T1?, T2?, T3?, T4?) Current => GetCurrentResult<T1, T2, T3, T4>();
@@ -58,7 +60,9 @@ namespace neon
 
         private ComponentID[] m_ComponentIDs;
 
-        public QueryIterator((Archetype, List<EntityID>)[] archetypes, ComponentID[] componentIDs)
+        public Func<bool> MoveNextAction;
+
+        public QueryIterator((Archetype, List<EntityID>)[] archetypes, ComponentID[] componentIDs, bool includeInactive)
         {
             m_Archetypes = archetypes;
             m_ComponentIDs = componentIDs;
@@ -67,11 +71,15 @@ namespace neon
                 return;
 
             m_ColumnIndices = GetIndices(archetypes[0].Item1);
+
+            MoveNextAction = includeInactive ? MoveNextInternal : MoveNextSkipInactive;
         }
 
         public void Dispose() { }
 
-        public bool MoveNext()
+        public bool MoveNext() => MoveNextAction();
+
+        private bool MoveNextInternal()
         {
             if (m_ArchetypeIndex >= m_Archetypes.Length)
             {
@@ -92,10 +100,42 @@ namespace neon
             return true;
         }
 
+        private bool MoveNextSkipInactive()
+        {
+            if (!MoveNextInternal())
+                return false;
+
+            if (CurrentDisabled())
+            {
+                return MoveNextSkipInactive();
+            }
+
+            return true;
+        }
+
         public void Reset()
         {
             m_ArchetypeIndex = 0;
             m_ArchetypePosition = -1;
+        }
+
+        private bool CurrentDisabled()
+        {
+            if (!m_Archetypes[m_ArchetypeIndex].Item2[m_ArchetypePosition].enabled)
+            {
+                return true;
+            }
+
+            for (int i = 0; i < m_ColumnIndices.Length; i++)
+            {
+                IComponent component = Get(m_ColumnIndices[i]);
+                if (component != null && !component.ID.enabled)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         protected (EntityID, T1?) GetCurrentResult<T1>() where T1 : class, IComponent
@@ -126,6 +166,14 @@ namespace neon
                 Get<T2>(m_ColumnIndices[1]),
                 Get<T3>(m_ColumnIndices[2]),
                 Get<T4>(m_ColumnIndices[3]));
+        }
+
+        private IComponent Get(int columnIndice)
+        {
+            if (columnIndice < 0)
+                return null;
+
+            return m_Archetypes[m_ArchetypeIndex].Item1.Columns[columnIndice][m_ArchetypePosition];
         }
 
         private T? Get<T>(int columnIndice) where T : class, IComponent

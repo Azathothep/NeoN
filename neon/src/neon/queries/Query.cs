@@ -7,9 +7,9 @@ namespace neon
 {
     public class Query<T1> : Query where T1 : class, IComponent
     {
-        public Query() : base(new ComponentID[] { Components.GetID<T1>() }) { }
+        public Query(bool includeInactive = false) : base(new ComponentID[] { Components.GetID<T1>() }, includeInactive) { }
 
-        public Query(IQueryFilter[] filters) : base(new ComponentID[] { Components.GetID<T1>() }, filters) { }
+        public Query(IQueryFilter[] filters, bool includeInactive = false) : base(new ComponentID[] { Components.GetID<T1>() }, filters, includeInactive) { }
 
         protected override IQueryFilter[] MakeFilters()
         {
@@ -28,9 +28,9 @@ namespace neon
 
     public class Query<T1, T2> : Query where T1 : class, IComponent where T2 : class, IComponent
     {
-        public Query() : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>() }) { }
+        public Query(bool includeInactive = false) : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>() }, includeInactive) { }
 
-        public Query(IQueryFilter[] filters) : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>() }, filters) { }
+        public Query(IQueryFilter[] filters, bool includeInactive = false) : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>() }, filters, includeInactive) { }
 
         protected override IQueryFilter[] MakeFilters()
         {
@@ -50,9 +50,9 @@ namespace neon
 
     public class Query<T1, T2, T3> : Query where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent
     {
-        public Query() : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>(), Components.GetID<T3>() }) { }
+        public Query(bool includeInactive = false) : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>(), Components.GetID<T3>() }, includeInactive) { }
 
-        public Query(IQueryFilter[] filters) : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>(), Components.GetID<T3>() }, filters) { }
+        public Query(IQueryFilter[] filters, bool includeInactive = false) : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>(), Components.GetID<T3>() }, filters, includeInactive) { }
 
         protected override IQueryFilter[] MakeFilters()
         {
@@ -73,9 +73,9 @@ namespace neon
 
     public class Query<T1, T2, T3, T4> : Query where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent where T4 : class, IComponent
     {
-        public Query() : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>(), Components.GetID<T3>(), Components.GetID<T4>() }) { }
+        public Query(bool includeInactive = false) : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>(), Components.GetID<T3>(), Components.GetID<T4>() }, includeInactive) { }
 
-        public Query(IQueryFilter[] filters) : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>(), Components.GetID<T3>(), Components.GetID<T4>() }, filters) { }
+        public Query(IQueryFilter[] filters, bool includeInactive = false) : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>(), Components.GetID<T3>(), Components.GetID<T4>() }, filters, includeInactive) { }
 
         protected override IQueryFilter[] MakeFilters()
         {
@@ -103,16 +103,21 @@ namespace neon
         private ComponentID[] m_ReturnValues;
         public ComponentID[] ReturnValues => m_ReturnValues;
 
-        public Query(ComponentID[] returnValues)
+        private bool m_IncludeInactive;
+        public bool IncludeInactive => m_IncludeInactive;
+
+        public Query(ComponentID[] returnValues, bool includeInactive = false)
         {
             m_ReturnValues = returnValues;
             m_Filters = MakeFilters();
+            m_IncludeInactive = includeInactive;
         }
 
-        public Query(ComponentID[] returnValues, IQueryFilter[] filters)
+        public Query(ComponentID[] returnValues, IQueryFilter[] filters, bool includeInactive = false)
         {
             m_ReturnValues = returnValues;
             m_Filters = ProcessFilters(filters);
+            m_IncludeInactive = includeInactive;
 
             Debug.WriteLine($"New query created with hashCode: {this.GetHashCode()}");
         }
@@ -196,6 +201,8 @@ namespace neon
 
                 for (int i = 0; i < m_Filters.Length; i++)
                     hashCode = hashCode * 7194917 ^ m_Filters[i].GetHashCode();
+
+                hashCode = hashCode * 7194917 ^ m_IncludeInactive.GetHashCode();
 
                 return hashCode;
             }
