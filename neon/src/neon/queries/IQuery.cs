@@ -9,5 +9,7 @@ namespace neon
     public interface IQuery
     {
         public IQueryFilter[] Filters { get; }
+
+        public ComponentID[] ReturnValues { get; }
     }
 }

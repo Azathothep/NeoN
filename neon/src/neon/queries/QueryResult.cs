@@ -10,138 +10,89 @@ namespace neon
         Unsafe
     }
 
-    public class QueryResult<T1, T2> : IQueryResult, IEnumerable<(EntityID, T1, T2)> where T1 : class, IComponent where T2 : class, IComponent
+    public class QueryResult<T> : QueryResult, IEnumerable<(EntityID, T)> where T : class, IComponent
     {
-        private class QueryResultEnumerator : IEnumerator<(EntityID, T1?, T2?)> // Make generic, recast everything past
-        {
-            private (Archetype, List<EntityID>)[] m_Archetypes; // List<EntityID> must stay List ? Maybe dangerous ?
+        public QueryResult(IComponentIterator iterableQuery, QueryResultMode mode = QueryResultMode.Safe) : base(iterableQuery, mode) { }
 
-            private int m_ArchetypeIndex = 0;
-            private int m_ArchetypePosition = -1;
+        public IEnumerator<(EntityID, T)> GetEnumerator() => GetEnumerator<(EntityID, T)>();
 
-            private int[] m_ColumnIndices;
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
 
-            private ComponentID[] m_ComponentIDs;
+    public class QueryResult<T1, T2> : QueryResult, IEnumerable<(EntityID, T1, T2)> where T1 : class, IComponent where T2 : class, IComponent
+    {
+        public QueryResult(IComponentIterator iterableQuery, QueryResultMode mode = QueryResultMode.Safe) : base(iterableQuery, mode) { }
 
-            public QueryResultEnumerator((Archetype, List<EntityID>)[] archetypes)
-            {
-                m_ComponentIDs = new ComponentID[]
-                {
-                    Components.GetID<T1>(),
-                    Components.GetID<T2>(),
-                };
+        public IEnumerator<(EntityID, T1, T2)> GetEnumerator() => GetEnumerator<(EntityID, T1, T2)>();
 
-                m_Archetypes = archetypes;
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
 
-                if (m_Archetypes.Length == 0)
-                    return;
+    public class QueryResult<T1, T2, T3> : QueryResult, IEnumerable<(EntityID, T1, T2, T3)> where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent
+    {
+        public QueryResult(IComponentIterator iterableQuery, QueryResultMode mode = QueryResultMode.Safe) : base(iterableQuery, mode) { }
 
-                m_ColumnIndices = GetIndices(archetypes[0].Item1);
-            }
+        public IEnumerator<(EntityID, T1, T2, T3)> GetEnumerator() => GetEnumerator<(EntityID, T1, T2, T3)>();
 
-            public (EntityID, T1?, T2?) Current => GetCurrentResult();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
 
-            object IEnumerator.Current => Current;
+    public class QueryResult<T1, T2, T3, T4> : QueryResult, IEnumerable<(EntityID, T1, T2, T3, T4)> where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent where T4 : class, IComponent
+    {
+        public QueryResult(IComponentIterator iterableQuery, QueryResultMode mode = QueryResultMode.Safe) : base(iterableQuery, mode) { }
 
-            public void Dispose() { }
+        public IEnumerator<(EntityID, T1, T2, T3, T4)> GetEnumerator() => GetEnumerator<(EntityID, T1, T2, T3, T4)>();
 
-            public bool MoveNext()
-            {
-                if (m_ArchetypeIndex >= m_Archetypes.Length)
-                {
-                    return false;
-                }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+	}
 
-                m_ArchetypePosition++;
-                if (m_ArchetypePosition >= m_Archetypes[m_ArchetypeIndex].Item2.Count)
-                {
-                    m_ArchetypeIndex++;
-                    if (m_ArchetypeIndex >= m_Archetypes.Length)
-                        return false;
+    public abstract class QueryResult : IQueryResult
+    {
+        protected bool m_IsDirty = true; // Dirty when component changes
 
-                    m_ArchetypePosition = 0;
-                    m_ColumnIndices = GetIndices(m_Archetypes[m_ArchetypeIndex].Item1);
-                }
-
-                return true;
-            }
-
-            public void Reset()
-            {
-                m_ArchetypeIndex = 0;
-                m_ArchetypePosition = -1;
-            }
-
-            private (EntityID, T1?, T2?) GetCurrentResult()
-            {
-                return (m_Archetypes[m_ArchetypeIndex].Item2[m_ArchetypePosition],
-                    Get<T1>(m_ColumnIndices[0]),
-                    Get<T2>(m_ColumnIndices[1]));
-            }
-            private T? Get<T>(int columnIndice) where T : class, IComponent
-            {
-                if (columnIndice < 0)
-                    return null;
-
-                return (T)m_Archetypes[m_ArchetypeIndex].Item1.Columns[columnIndice][m_ArchetypePosition];
-            }
-
-            private int[] GetIndices(Archetype archetype)
-            {
-                int[] indices = new int[2];
-
-                List<ComponentID> componentIDs = archetype.ComponentSet.ComponentIDs;
-                for (int i = 0; i < m_ComponentIDs.Length; i++)
-                    indices[i] = componentIDs.IndexOf(m_ComponentIDs[i]);
-
-                return indices;
-            }
-        }
-
-        private Query<T1, T2> m_Query;
-
-        private bool m_IsDirty = true;
         public bool IsDirty => m_IsDirty;
 
-        (Archetype, List<EntityID>)[] m_RequestedArchetypes;
+		private IEnumerable? m_Storage;
 
         private QueryResultMode m_Mode;
 
-        public QueryResult(Query<T1, T2> query, QueryResultMode mode = QueryResultMode.Safe) {
-            m_Query = query;
-            m_Mode = mode;
+        private IComponentIterator m_IterableQuery;
+
+        public QueryResult(IComponentIterator iterableQuery, QueryResultMode mode = QueryResultMode.Safe)
+        {
+			m_IterableQuery = iterableQuery;
+			m_Mode = mode;
         }
 
-        public void Build()
+        public void SetDirty() => m_IsDirty = true;
+
+		protected IEnumerable<T> MakeStorage<T>(IEnumerator<T> enumerator)
+		{
+			var storage = new List<T>();
+
+			while (enumerator.MoveNext())
+				storage.Add(enumerator.Current);
+
+			return storage;
+		}
+
+        protected IEnumerator<T> GetEnumerator<T>()
         {
-            m_RequestedArchetypes = Components.RequestArchetypes(m_Query);
+			if (m_Mode == QueryResultMode.Safe && !m_IsDirty)
+			{
+				return (IEnumerator<T>)m_Storage.GetEnumerator();
+			}
 
-            m_IsDirty = false;
-        }
+			var enumerator = (IEnumerator<T>)m_IterableQuery.Create();
 
-        private List<(EntityID, T1, T2)> Store(QueryResultEnumerator enumerator)
-        {
-            List<(EntityID, T1, T2)> storage = new();
+			if (m_Mode == QueryResultMode.Safe) // && is dirty
+			{
+				m_Storage = MakeStorage(enumerator);
+                m_IsDirty = false;
+				return (IEnumerator<T>)m_Storage.GetEnumerator();
+			}
 
-            while (enumerator.MoveNext())
-                storage.Add(enumerator.Current);
-
-            return storage;
-        }
-
-        public IEnumerator<(EntityID, T1, T2)> GetEnumerator()
-        {
-            var enumerator = new QueryResultEnumerator(m_RequestedArchetypes);
-
-            if (m_Mode == QueryResultMode.Safe)
-                return Store(enumerator).GetEnumerator();
-            
             return enumerator;
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
         }
     }
 }

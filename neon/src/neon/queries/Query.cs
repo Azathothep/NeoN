@@ -5,24 +5,34 @@ using System.Linq;
 
 namespace neon
 {
-    public class Query<T1, T2> : IQuery where T1 : class, IComponent where T2 : class, IComponent
+    public class Query<T1> : Query where T1 : class, IComponent
     {
-        private IQueryFilter[] m_Filters;
-        public IQueryFilter[] Filters => m_Filters;
+        public Query() : base(new ComponentID[] { Components.GetID<T1>() }) { }
 
-        public Query()
+        public Query(IQueryFilter[] filters) : base(new ComponentID[] { Components.GetID<T1>() }, filters) { }
+
+        protected override IQueryFilter[] MakeFilters()
         {
-            m_Filters = MakeFilters();
+            IQueryFilter[] queryFilters = new IQueryFilter[1];
+
+            queryFilters[0] = new QueryFilter<T1>(FilterTerm.Has);
+
+            return queryFilters.ToArray();
         }
 
-        public Query(IQueryFilter[] filters)
+        protected override bool EqualsType(object obj)
         {
-            m_Filters = ProcessFilters(filters);
-
-            Debug.WriteLine($"New query created with hashCode: {this.GetHashCode()}");
+            return obj is Query<T1>;
         }
+    }
 
-        private IQueryFilter[] MakeFilters()
+    public class Query<T1, T2> : Query where T1 : class, IComponent where T2 : class, IComponent
+    {
+        public Query() : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>() }) { }
+
+        public Query(IQueryFilter[] filters) : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>() }, filters) { }
+
+        protected override IQueryFilter[] MakeFilters()
         {
             IQueryFilter[] queryFilters = new IQueryFilter[2];
 
@@ -32,14 +42,85 @@ namespace neon
             return queryFilters.ToArray();
         }
 
+        protected override bool EqualsType(object obj)
+        {
+            return obj is Query<T1, T2>;
+        }
+    }
+
+    public class Query<T1, T2, T3> : Query where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent
+    {
+        public Query() : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>(), Components.GetID<T3>() }) { }
+
+        public Query(IQueryFilter[] filters) : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>(), Components.GetID<T3>() }, filters) { }
+
+        protected override IQueryFilter[] MakeFilters()
+        {
+            IQueryFilter[] queryFilters = new IQueryFilter[3];
+
+            queryFilters[0] = new QueryFilter<T1>(FilterTerm.Has);
+            queryFilters[1] = new QueryFilter<T2>(FilterTerm.Has);
+            queryFilters[2] = new QueryFilter<T3>(FilterTerm.Has);
+
+            return queryFilters.ToArray();
+        }
+
+        protected override bool EqualsType(object obj)
+        {
+            return obj is Query<T1, T2, T3>;
+        }
+    }
+
+    public class Query<T1, T2, T3, T4> : Query where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent where T4 : class, IComponent
+    {
+        public Query() : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>(), Components.GetID<T3>(), Components.GetID<T4>() }) { }
+
+        public Query(IQueryFilter[] filters) : base(new ComponentID[] { Components.GetID<T1>(), Components.GetID<T2>(), Components.GetID<T3>(), Components.GetID<T4>() }, filters) { }
+
+        protected override IQueryFilter[] MakeFilters()
+        {
+            IQueryFilter[] queryFilters = new IQueryFilter[4];
+
+            queryFilters[0] = new QueryFilter<T1>(FilterTerm.Has);
+            queryFilters[1] = new QueryFilter<T2>(FilterTerm.Has);
+            queryFilters[2] = new QueryFilter<T3>(FilterTerm.Has);
+            queryFilters[2] = new QueryFilter<T4>(FilterTerm.Has);
+
+            return queryFilters.ToArray();
+        }
+
+        protected override bool EqualsType(object obj)
+        {
+            return obj is Query<T1, T2, T3, T4>;
+        }
+    }
+
+    public abstract class Query : IQuery
+    {
+        protected IQueryFilter[] m_Filters;
+        public IQueryFilter[] Filters => m_Filters;
+
+        private ComponentID[] m_ReturnValues;
+        public ComponentID[] ReturnValues => m_ReturnValues;
+
+        public Query(ComponentID[] returnValues)
+        {
+            m_ReturnValues = returnValues;
+            m_Filters = MakeFilters();
+        }
+
+        public Query(ComponentID[] returnValues, IQueryFilter[] filters)
+        {
+            m_ReturnValues = returnValues;
+            m_Filters = ProcessFilters(filters);
+
+            Debug.WriteLine($"New query created with hashCode: {this.GetHashCode()}");
+        }
+
+        protected abstract IQueryFilter[] MakeFilters();
+
         private IQueryFilter[] ProcessFilters(IQueryFilter[] filters)
         {
-            List<ComponentID> templateComponentIDs = new List<ComponentID>
-            {
-                Components.GetID<T1>(),
-                Components.GetID<T2>()
-            };
-
             List<IQueryFilter> queryFilters = new List<IQueryFilter>();
 
             // remove doubles
@@ -56,19 +137,19 @@ namespace neon
 
                 // Don't add if filter component is one of the template parameter components & is indicated as "Has not"
 
-                if (filters[i].Term == FilterTerm.HasNot && templateComponentIDs.Contains(filters[i].ComponentID))
+                if (filters[i].Term == FilterTerm.HasNot && m_ReturnValues.Contains(filters[i].ComponentID))
                     continue;
 
                 queryFilters.Add(filters[i]);
             }
 
-            // add T1 & T2 if not present
+            // add template types if not present
 
-            if (queryFilters.Find((f) => f.ComponentID == templateComponentIDs[0]) == null)
-                queryFilters.Add(new QueryFilter<T1>(FilterTerm.Has));
-
-            if (queryFilters.Find((f) => f.ComponentID == templateComponentIDs[1]) == null)
-                queryFilters.Add(new QueryFilter<T2>(FilterTerm.Has));
+            for (int i = 0; i < m_ReturnValues.Length; i++)
+            {
+                if (queryFilters.Find((f) => f.ComponentID == m_ReturnValues[i]) == null)
+                    queryFilters.Add(new QueryFilter(FilterTerm.Has, m_ReturnValues[i]));
+            }
 
             // sort them with "Has" first, then "Has Not", then "Might Have"
 
@@ -84,10 +165,10 @@ namespace neon
 
         public override bool Equals(object obj)
         {
-            if (obj is not Query<T1, T2>)
+            if (obj is not Query || this.EqualsType(obj) == false)
                 return false;
 
-            Query<T1, T2> other = (Query<T1, T2>)obj;
+            Query other = (Query)obj;
 
             if (this.Filters.Length != other.Filters.Length)
                 return false;
@@ -104,6 +185,8 @@ namespace neon
 
             return true;
         }
+
+        protected abstract bool EqualsType(object obj);
 
         public override int GetHashCode()
         {

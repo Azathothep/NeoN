@@ -42,4 +42,36 @@ namespace neon
             }
         }
     }
+
+    public struct QueryFilter : IQueryFilter
+    {
+        private FilterTerm m_Term;
+        public FilterTerm Term => m_Term;
+
+        private ComponentID m_ComponentID;
+        public ComponentID ComponentID => m_ComponentID;
+
+        public QueryFilter(FilterTerm term, ComponentID componentID)
+        {
+            m_Term = term;
+            m_ComponentID = componentID;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return (obj is IQueryFilter other) && this.Term == other.Term;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hashCode = 131317;
+                hashCode = hashCode * 4695947 ^ m_Term.GetHashCode();
+                hashCode = hashCode * 4695947 ^ m_ComponentID.GetHashCode();
+
+                return hashCode;
+            }
+        }
+    }
 }

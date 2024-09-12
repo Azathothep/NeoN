@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
+using static neon.ComponentStorage;
 
 namespace neon
 {
@@ -10,46 +12,56 @@ namespace neon
 
     public class QueryBuilder
     {
-        private class QueryStorage
-        {
-            public Dictionary<IQuery, IQueryResult> CachedQueries = new();
-        }
-
-        private static QueryStorage storage = new();
+        private static IQueryStorage storage;
 
         private QueryBuilder() { }
 
-        public static IEnumerable<(EntityID, T1, T2)> Get<T1, T2>(Query<T1, T2> query, QueryType queryType, QueryResultMode mode = QueryResultMode.Safe) where T1 : class, IComponent where T2 : class, IComponent
-        {
-            if (storage.CachedQueries.TryGetValue(query, out IQueryResult? result))
-            {
-                if (result.IsDirty)
-                {
-                    Debug.WriteLine("Query dirty : updating");
-                    result.Build();
-                }
-
-                return ((QueryResult<T1, T2>)result);
-            }
-
-            QueryResult<T1, T2> queryResult = CreateQuery(query, mode);
-
-            if (queryType == QueryType.Uncached)
-                return queryResult;
-
-            storage.CachedQueries.Add(query, queryResult);
-
-            return queryResult;
+        public static void SetStorage(IQueryStorage storage) {
+            QueryBuilder.storage = storage;
         }
 
-        private static QueryResult<T1, T2> CreateQuery<T1, T2>(Query<T1, T2> query, QueryResultMode mode) where T1 : class, IComponent where T2 : class, IComponent
+        public static IEnumerable<(EntityID, T1)> Get<T1>(Query<T1> query, QueryType queryType, QueryResultMode mode = QueryResultMode.Safe) where T1 : class, IComponent
         {
-            Debug.WriteLine($"Building new QueryResult with types {typeof(T1)} & {typeof(T2)}");
+            return (IEnumerable<(EntityID, T1)>)
+                storage.Get(query, queryType, (provider) =>
+                {
+                    IComponentIterator iterator = provider.Get<T1>(query.Filters, queryType);
+                    return new QueryResult<T1>(iterator, mode);
+                }
+            );
+        }
 
-            QueryResult<T1, T2> qResult = new QueryResult<T1, T2>(query, mode);
-            qResult.Build();
+        public static IEnumerable<(EntityID, T1, T2)> Get<T1, T2>(Query<T1, T2> query, QueryType queryType, QueryResultMode mode = QueryResultMode.Safe) where T1 : class, IComponent where T2 : class, IComponent
+        {
+            return (IEnumerable<(EntityID, T1, T2)>)
+                storage.Get(query, queryType, (provider) =>
+                {
+                    IComponentIterator iterator = provider.Get<T1, T2>(query.Filters, queryType);
+                    return new QueryResult<T1, T2>(iterator, mode);
+                }
+            );
+        }
 
-            return qResult;
+        public static IEnumerable<(EntityID, T1, T2, T3)> Get<T1, T2, T3>(Query<T1, T2, T3> query, QueryType queryType, QueryResultMode mode = QueryResultMode.Safe) where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent
+        {
+            return (IEnumerable<(EntityID, T1, T2, T3)>)
+                storage.Get(query, queryType, (provider) =>
+                {
+                    IComponentIterator iterator = provider.Get<T1, T2, T3>(query.Filters, queryType);
+                    return new QueryResult<T1, T2, T3>(iterator, mode);
+                }
+            );
+        }
+
+        public static IEnumerable<(EntityID, T1, T2, T3, T4)> Get<T1, T2, T3, T4>(Query<T1, T2, T3, T4> query, QueryType queryType, QueryResultMode mode = QueryResultMode.Safe) where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent where T4 : class, IComponent
+        {
+            return (IEnumerable<(EntityID, T1, T2, T3, T4)>)
+                storage.Get(query, queryType, (provider) =>
+                {
+                    IComponentIterator iterator = provider.Get<T1, T2, T3, T4>(query.Filters, queryType);
+                    return new QueryResult<T1, T2, T3, T4>(iterator, mode);
+                }
+            );
         }
     }
 }

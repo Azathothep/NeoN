@@ -4,6 +4,6 @@
     {
         public bool IsDirty { get; }
 
-        public void Build();
+        public void SetDirty();
     }
 }

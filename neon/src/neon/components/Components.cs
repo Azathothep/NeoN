@@ -1,58 +1,94 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
+using System.Dynamic;
+using System.Globalization;
 
 namespace neon
 {
     public partial class Components
     {
-        private class ComponentsIDStorage {
-            public Dictionary<Type, ComponentID> ComponentToID = new();
-            public Dictionary<ComponentID, Type> IDToComponent = new();
-            public int LastID = -1;
+        private static IComponentStorage storage;
+
+        private Components() { }
+
+        public static void SetStorage(IComponentStorage storage)
+        {
+            Components.storage = storage;
         }
 
-        private static ComponentsIDStorage idStorage = new();
-
-        public static Type GetType(ComponentID component)
+        public static bool Has<T>(EntityID entityID) where T : class, IComponent
         {
-            return idStorage.IDToComponent[component];
+            return storage.Has<T>(entityID);
         }
 
-        public static ComponentID GetID<T>() where T : class, IComponent
+        public static T? Get<T>(EntityID entityID) where T : class, IComponent
         {
-            Type componentType = typeof(T);
-
-            return GetIDByTypeUnsafe(componentType);
+            return storage.Get<T>(entityID);
         }
 
-        public static ComponentID GetIDByType(Type componentType)
+        public static (T1?, T2?) Get<T1, T2>(EntityID entityID) where T1 : class, IComponent where T2 : class, IComponent
         {
-            if (!componentType.IsSubclassOf(typeof(IComponent)))
-                return null;
+            object[] rawComponents = storage.GetComponentsInternal(entityID, new ComponentID[]
+            {
+                Components.GetID<T1>(),
+                Components.GetID<T2>()
+            });
 
-            return GetIDByTypeUnsafe(componentType);
+            return ((T1)rawComponents[0], ((T2)rawComponents[1]));
         }
 
-        private static ComponentID GetIDByTypeUnsafe(Type componentType)
+        public static (T1?, T2?, T3?) Get<T1, T2, T3>(EntityID entityID) where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent
         {
-            if (idStorage.ComponentToID.TryGetValue(componentType, out ComponentID componentID))
-                return componentID;
+            object[] rawComponents = storage.GetComponentsInternal(entityID, new ComponentID[]
+            {
+                Components.GetID<T1>(),
+                Components.GetID<T2>(),
+                Components.GetID<T3>()
+            });
 
-            componentID = new ComponentID(++idStorage.LastID);
-
-            AddUnsafe(componentType, componentID);
-
-            return componentID;
+            return ((T1)rawComponents[0], (T2)rawComponents[1], (T3)rawComponents[2]);
         }
 
-        private static void AddUnsafe(Type componentType, ComponentID id)
+        public static (T1?, T2?, T3?, T4?) Get<T1, T2, T3, T4>(EntityID entityID) where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent where T4 : class, IComponent
         {
-            idStorage.ComponentToID.Add(componentType, id);
-            idStorage.IDToComponent.Add(id, componentType);
+            object[] rawComponents = storage.GetComponentsInternal(entityID, new ComponentID[]
+            {
+                Components.GetID<T1>(),
+                Components.GetID<T2>(),
+                Components.GetID<T3>(),
+                Components.GetID<T4>()
+            });
+
+            return ((T1)rawComponents[0], (T2)rawComponents[1], (T3)rawComponents[2], (T4)rawComponents[3]);
+        }
+
+        public static bool TryGet<T>(EntityID entityID, out T? result) where T : class, IComponent
+        {
+            result = storage.Get<T>(entityID);
+            return result != null;
+        }
+
+        public static T? Add<T>(EntityID entityID) where T : class, IComponent, new()
+        {
+            return storage.Add(entityID, new T());
+        }
+
+        public static T? Add<T>(EntityID entityID, T inputComponent) where T : class, IComponent
+        {
+            return storage.Add(entityID, (T)inputComponent.Clone());
+        }
+
+        public static void Remove<T>(EntityID entityID) where T : class, IComponent
+        {
+            storage.Remove<T>(entityID);
+        }
+
+        public static void RemoveAll(EntityID entityID)
+        {
+            storage.Remove(entityID);
         }
     }
 }
