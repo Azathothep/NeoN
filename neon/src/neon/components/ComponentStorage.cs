@@ -142,7 +142,7 @@ namespace neon
                 for (int j = 0; j < archetypesLeft.Count; j++)
                 {
                     Archetype archetype = m_Storage.m_ArchetypeIDToArchetype[archetypesLeft[j]];
-                    List<EntityID> entities = m_Storage.m_ArchetypeToEntities[archetype];
+                    List<EntityID> entities = m_Storage.m_ArchetypeToEntities[archetype.ID];
 
                     archetypes.Add((archetype, entities));
                 }
@@ -153,7 +153,7 @@ namespace neon
 
         private Dictionary<EntityID, (Archetype, int)> m_EntityToArchetype = new();
 
-        private Dictionary<Archetype, List<EntityID>> m_ArchetypeToEntities = new();
+        private Dictionary<ArchetypeID, List<EntityID>> m_ArchetypeToEntities = new();
 
         private Dictionary<ComponentSet, Archetype> m_ComponentSetToArchetype = new();
 
@@ -226,7 +226,9 @@ namespace neon
 
         public T? Add<T>(EntityID entityID, T component) where T : class, IComponent
         {
-            component.ID = Entities.GetID();
+            component.ID = Entities.GetID(true);
+
+            component.ID.SetParent(entityID);
 
             ComponentID componentID = Components.GetID<T>();
 
@@ -252,7 +254,12 @@ namespace neon
                         // Already has this component
 
                         int column = GetColumn(componentID, archetype);
-                        archetype.Columns[column][row] = component; // Replace ? Or leave unchecked ?
+                        IComponent previousComponent = archetype.Columns[column][row];
+                        
+                        archetype.Columns[column][row] = component; // Replace
+
+                        Destroy(previousComponent);
+
                         return component;
                     }
                 }
@@ -285,12 +292,6 @@ namespace neon
 
                     int column = GetColumn(componentID, nextArchetype);
 
-                    if (column == -1)
-                    {
-                        // Something weird happened
-                        return null;
-                    }
-
                     components.Insert(column, component); // This should stay in order, because we're inserting it at its right location
 
                     AddEntityToArchetype(entityID, components, nextArchetype);
@@ -320,8 +321,9 @@ namespace neon
             // if archetype contains only 1 (this) component
             if (archetype.ComponentSet.ComponentIDs.Count == 1)
             {
-                RemoveEntityFromArchetype(entityID, archetype, row);
+                IComponent component = RemoveEntityFromArchetype(entityID, archetype, row)[0];
                 m_EntityToArchetype.Remove(entityID);
+                Destroy(component);
                 return;
             }
 
@@ -344,14 +346,19 @@ namespace neon
             }
 
             // Removing component from archetype & list, then adding it to nextArchetype & save result
+            {
+                List<IComponent> components = RemoveEntityFromArchetype(entityID, archetype, row);
 
-            List<IComponent> components = RemoveEntityFromArchetype(entityID, archetype, row);
+                int column = GetColumn(componentID, archetype);
 
-            int column = GetColumn(componentID, archetype);
+                IComponent component = components[column];
 
-            components.RemoveAt(column); // This will remove the component set at column
+                components.RemoveAt(column); // This will remove the component set at column
 
-            AddEntityToArchetype(entityID, components, nextArchetype);
+                Destroy(component);
+
+                AddEntityToArchetype(entityID, components, nextArchetype);
+            }
         }
 
         public void Remove(EntityID entityID)
@@ -366,7 +373,7 @@ namespace neon
 
             for (int i = 0; i < components.Count; i++)
             {
-                Entities.Destroy(components[i].ID);
+                Destroy(components[i]);
             }
         }
 
@@ -441,10 +448,10 @@ namespace neon
 
             m_EntityToArchetype[entityID] = (archetype, row);
 
-            if (!m_ArchetypeToEntities.TryGetValue(archetype, out List<EntityID> entities))
+            if (!m_ArchetypeToEntities.TryGetValue(archetype.ID, out List<EntityID> entities))
             {
                 entities = new List<EntityID>();
-                m_ArchetypeToEntities.Add(archetype, entities);
+                m_ArchetypeToEntities.Add(archetype.ID, entities);
             }
 
             entities.Add(entityID);
@@ -459,9 +466,9 @@ namespace neon
         {
             List<IComponent> components = archetype.RemoveEntity(row);
 
-            m_ArchetypeToEntities[archetype].Remove(entityID);
+            m_ArchetypeToEntities[archetype.ID].Remove(entityID);
 
-            List<EntityID> entities = m_ArchetypeToEntities[archetype];
+            List<EntityID> entities = m_ArchetypeToEntities[archetype.ID];
             for (int i = row; i < entities.Count; i++)
             {
                 (Archetype a, int r) = m_EntityToArchetype[entities[i]];
@@ -476,5 +483,31 @@ namespace neon
             return components;
         }
 
+        private void Destroy(IComponent component)
+        {
+            Entities.Destroy(component.ID);
+        }
+
+        public void OnEntityActiveStateChanged(EntityID entityID, bool newActiveState)
+        {
+            if (!m_EntityToArchetype.TryGetValue(entityID, out (Archetype, int) archetypeRecord))
+                return;
+
+            (Archetype archetype, int row) = archetypeRecord;
+
+            int newIndex = archetype.OnEntityActiveStateChanged(row, newActiveState);
+            if (newIndex != row)
+            {
+                EntityID other = m_ArchetypeToEntities[archetype.ID][newIndex];
+
+                m_EntityToArchetype[entityID] = (archetype, newIndex);
+                m_EntityToArchetype[other] = (archetype, row);
+            }
+
+            foreach (var cID in archetype.ComponentSet.ComponentIDs)
+            {
+                m_ComponentStorageNotifier.Raise(cID);
+            }
+        }
     }
 }

@@ -13,7 +13,7 @@ namespace neon
             Entities.storage = storage;
         }
 
-        public static EntityID GetID() => storage.GetID();
+        public static EntityID GetID(bool isComponent = false) => storage.GetID(isComponent);
 
         public static void Destroy(EntityID entityID) => storage.Destroy(entityID);
 
@@ -21,6 +21,8 @@ namespace neon
 
         public static EntityID? GetParent(EntityID entityID) => storage.GetParent(entityID);
 
-        public static HashSet<EntityID> GetChildren(EntityID entityID) => storage.GetChildren(entityID);
+        public static HashSet<EntityID> GetChildren(EntityID entityID, bool includeComponents = true) => storage.GetChildren(entityID, includeComponents);
+
+        public static void RefreshActiveState(EntityID entityID) => storage.RefreshActiveState(entityID);
     }
 }

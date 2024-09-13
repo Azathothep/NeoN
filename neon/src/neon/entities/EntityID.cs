@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace neon
@@ -10,26 +11,85 @@ namespace neon
 
         public enum Flag
         {
-            Enabled = 1
+            Active = 0,
+            ActiveParent = 1,
+            Component = 2
         }
 
-        public bool enabled
+        public bool active
         {
-            get => (m_ID & (ulong)Flag.Enabled) == 1; // Checking if last bit of ID is 1 or 0
+            get => GetFlag(Flag.Active); // Checking if last bit of ID is 1 or 0
             set {
-                if (!enabled && value == true)
+                if (!active && value == true)
                 {
-                    m_ID = m_ID | (ulong)Flag.Enabled;
-                } else if (enabled && value == false)
+                    SetFlag(Flag.Active, true);
+                    Entities.RefreshActiveState(this);
+                } else if (active && value == false)
                 {
-                    m_ID = m_ID & ~(ulong)Flag.Enabled;
+                    SetFlag(Flag.Active, false);
+                    Entities.RefreshActiveState(this);
                 }
             }
         }
 
-        public EntityID(UInt32 value)
+		public bool activeParent
+		{
+			get => GetFlag(Flag.ActiveParent);
+			private set
+			{
+				if (!activeParent && value == true)
+				{
+					SetFlag(Flag.ActiveParent, true);
+					Entities.RefreshActiveState(this);
+				}
+				else if (activeParent && value == false)
+				{
+					SetFlag(Flag.ActiveParent, false);
+					Entities.RefreshActiveState(this);
+				}
+			}
+		}
+
+        public bool activeInHierarchy => GetFlag(Flag.ActiveParent) & GetFlag(Flag.Active);
+
+        public bool isComponent => GetFlag(Flag.Component);
+
+        public void RefreshActiveParent()
         {
-            this.m_ID = (value << 32) | 1; // Shifting ID by 32 bits to the left, + 1 to set is as enabled
+            EntityID parent = this.GetParent();
+
+            this.activeParent = parent != null ? parent.activeInHierarchy : true;
+        }
+
+        public EntityID(UInt32 value, bool isComponent = false)
+        {
+            this.m_ID = ((ulong)value << 32);
+
+            SetFlag(Flag.Active, true);
+
+            RefreshActiveParent();
+
+            SetFlag(Flag.Component, isComponent);
+        }
+
+        private void SetFlag(Flag flag, bool state)
+        {
+            if (state)
+            {
+                ulong mask = ((ulong)1 << (int)flag);
+                m_ID = m_ID | mask;
+            } else
+            {
+                ulong mask = ~((ulong)1 << (int)flag);
+                m_ID = m_ID & mask;
+            }
+        }
+
+        public bool GetFlag(Flag flag)
+        {
+            ulong mask = ((ulong)1 << (int)flag);
+            ulong result = (m_ID & mask);
+            return result != 0;
         }
 
         public T? Add<T>() where T : class, IComponent, new() => neon.Components.Add<T>(this);
@@ -50,7 +110,6 @@ namespace neon
         public HashSet<EntityID> GetChildren() => neon.Entities.GetChildren(this);
 
         public void SetParent(EntityID parentID) => neon.Entities.SetRelation(parentID, this);
-        public void SetChild(EntityID childID) => neon.Entities.SetRelation(this, childID);
 
         public static implicit operator UInt32(EntityID entity)
         {

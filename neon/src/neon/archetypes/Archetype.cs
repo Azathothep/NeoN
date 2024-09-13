@@ -26,6 +26,9 @@ namespace neon
         private Dictionary<ComponentID, ArchetypeEdges> m_Edges = new();
         public Dictionary<ComponentID, ArchetypeEdges> Edges => m_Edges;
 
+        private int m_DisabledEndIndex;
+        public int DisabledEndIndex => m_DisabledEndIndex;
+
         public int EntityCount => m_Columns[0].Count;
 
         public Archetype(ComponentSet componentSet)
@@ -38,6 +41,8 @@ namespace neon
             {
                 m_Columns.Add(new Column());
             }
+
+            m_DisabledEndIndex = -1;
         }
 
         public int AddEntity(List<IComponent> components)
@@ -68,6 +73,37 @@ namespace neon
             }
 
             return components;
+        }
+
+        public int OnEntityActiveStateChanged(int row, bool newActiveState)
+        {
+            int newIndex = row;
+
+            if (newActiveState && row <= m_DisabledEndIndex)
+            {
+                newIndex = m_DisabledEndIndex;
+                m_DisabledEndIndex--;
+            }
+            else if (newActiveState == false && row > m_DisabledEndIndex)
+            {
+                newIndex = m_DisabledEndIndex + 1;
+                m_DisabledEndIndex++;
+            }
+
+			if (row != newIndex)
+				SwapEntities(row, newIndex);
+
+            return newIndex;
+        }
+
+        private void SwapEntities(int row1, int row2)
+        {
+            for (int i = 0; i < m_Columns.Count; i++)
+            {
+                IComponent temp = m_Columns[i][row1];
+                m_Columns[i][row1] = m_Columns[i][row2];
+                m_Columns[i][row2] = temp;
+            }
         }
     }
 }

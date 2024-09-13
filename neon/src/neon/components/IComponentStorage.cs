@@ -21,5 +21,8 @@ namespace neon
         public void Remove<T>(EntityID entityID) where T : class, IComponent;
 
         public void Remove(EntityID entityID);
+
+        //CHANGE THIS TO AN EVENTREFERENCE
+        public void OnEntityActiveStateChanged(EntityID entityID, bool newActiveState);
     }
 }

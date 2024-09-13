@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,7 +23,7 @@ namespace neon
             return (thirtyBits << 2) | twoBits;
         }
 
-        public EntityID GetID()
+        public EntityID GetID(bool isComponent = false)
         {
             UInt32 id = RandomUInt32();
 
@@ -31,12 +32,14 @@ namespace neon
 
             //Debug.WriteLine($"New entity created with id {id}");
 
-            return new EntityID(id);
+            return new EntityID(id, isComponent);
         }
 
         public void Destroy(EntityID entityID)
         {
-            HashSet<EntityID> children = GetChildren(entityID);
+            Components.RemoveAll(entityID);
+         
+            HashSet<EntityID> children = GetChildren(entityID); // logically, must not include any children components because they should have been destroyed just previously
 
             foreach (var c in children)
                 Destroy(c);
@@ -45,7 +48,6 @@ namespace neon
             if (parentID != null)
                 RemoveRelation(parentID, entityID);
 
-            Components.RemoveAll(entityID);
             m_EntityIDs.Remove(entityID);
         }
 
@@ -57,7 +59,7 @@ namespace neon
             if (!m_ParentEntities.TryGetValue(parentID, out HashSet<EntityID>? childSet))
             {
                 childSet = new HashSet<EntityID>();
-                m_ParentEntities.Add(childID, childSet);
+                m_ParentEntities.Add(parentID, childSet);
             }
 
             childSet.Add(childID);
@@ -82,12 +84,43 @@ namespace neon
             return null;
         }
 
-        public HashSet<EntityID> GetChildren(EntityID entityID)
+        public HashSet<EntityID> GetChildren(EntityID entityID, bool includeComponents = true)
         {
             if (m_ParentEntities.TryGetValue(entityID, out HashSet<EntityID>? children))
-                return children;
+            {
+                if (includeComponents)
+                    return children;
+
+                HashSet<EntityID> childrenSet = new HashSet<EntityID>();
+                foreach (var c in children)
+                {
+                    if (!c.isComponent)
+                        childrenSet.Add(c);
+                }
+
+                return childrenSet;
+            }
 
             return new HashSet<EntityID>();
+        }
+
+        public void RefreshActiveState(EntityID entityID)
+        {
+			if (entityID.isComponent)
+			{
+				EntityID ownerID = entityID.GetParent();
+				Components.OnEntityActiveStateChanged(ownerID, entityID.activeInHierarchy);
+			} else
+			{
+				Components.OnEntityActiveStateChanged(entityID, entityID.activeInHierarchy);
+			}
+
+			HashSet<EntityID> children = GetChildren(entityID);
+
+            foreach (var c in children)
+            {
+                c.RefreshActiveParent();
+            }
         }
     }
 }

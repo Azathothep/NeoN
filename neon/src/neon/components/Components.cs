@@ -90,5 +90,9 @@ namespace neon
         {
             storage.Remove(entityID);
         }
+
+        // CHANGE THIS TO AN EVENT REFERENCE
+
+        public static void OnEntityActiveStateChanged(EntityID entityID, bool newActiveState) => storage.OnEntityActiveStateChanged(entityID, newActiveState);
     }
 }

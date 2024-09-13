@@ -62,6 +62,8 @@ namespace neon
 
         public Func<bool> MoveNextAction;
 
+        private bool m_IncludeInactive;
+
         public QueryIterator((Archetype, List<EntityID>)[] archetypes, ComponentID[] componentIDs, bool includeInactive)
         {
             m_Archetypes = archetypes;
@@ -72,14 +74,14 @@ namespace neon
 
             m_ColumnIndices = GetIndices(archetypes[0].Item1);
 
-            MoveNextAction = includeInactive ? MoveNextInternal : MoveNextSkipInactive;
+            m_IncludeInactive = includeInactive;
+
+			m_ArchetypePosition = m_IncludeInactive ? -1 : m_Archetypes[m_ArchetypeIndex].Item1.DisabledEndIndex;
         }
 
         public void Dispose() { }
 
-        public bool MoveNext() => MoveNextAction();
-
-        private bool MoveNextInternal()
+        public bool MoveNext()
         {
             if (m_ArchetypeIndex >= m_Archetypes.Length)
             {
@@ -89,26 +91,24 @@ namespace neon
             m_ArchetypePosition++;
             if (m_ArchetypePosition >= m_Archetypes[m_ArchetypeIndex].Item2.Count)
             {
-                m_ArchetypeIndex++;
-                if (m_ArchetypeIndex >= m_Archetypes.Length)
-                    return false;
-
-                m_ArchetypePosition = 0;
-                m_ColumnIndices = GetIndices(m_Archetypes[m_ArchetypeIndex].Item1);
+                return MoveToNextArchetype();
             }
 
             return true;
         }
 
-        private bool MoveNextSkipInactive()
+        private bool MoveToNextArchetype()
         {
-            if (!MoveNextInternal())
-                return false;
-
-            if (CurrentDisabled())
+            while (m_ArchetypePosition >= m_Archetypes[m_ArchetypeIndex].Item2.Count)
             {
-                return MoveNextSkipInactive();
+                m_ArchetypeIndex++;
+                if (m_ArchetypeIndex >= m_Archetypes.Length)
+                    return false;
+
+                m_ArchetypePosition = m_IncludeInactive ? 0 : m_Archetypes[m_ArchetypeIndex].Item1.DisabledEndIndex + 1;
             }
+
+            m_ColumnIndices = GetIndices(m_Archetypes[m_ArchetypeIndex].Item1);
 
             return true;
         }
@@ -117,25 +117,6 @@ namespace neon
         {
             m_ArchetypeIndex = 0;
             m_ArchetypePosition = -1;
-        }
-
-        private bool CurrentDisabled()
-        {
-            if (!m_Archetypes[m_ArchetypeIndex].Item2[m_ArchetypePosition].enabled)
-            {
-                return true;
-            }
-
-            for (int i = 0; i < m_ColumnIndices.Length; i++)
-            {
-                IComponent component = Get(m_ColumnIndices[i]);
-                if (component != null && !component.ID.enabled)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         protected (EntityID, T1?) GetCurrentResult<T1>() where T1 : class, IComponent
