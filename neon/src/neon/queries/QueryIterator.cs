@@ -167,7 +167,7 @@ namespace neon
 
         private int[] GetIndices(Archetype archetype)
         {
-            int[] indices = new int[2];
+            int[] indices = new int[m_ComponentIDs.Length];
 
             List<ComponentID> componentIDs = archetype.ComponentSet.ComponentIDs;
             for (int i = 0; i < m_ComponentIDs.Length; i++)

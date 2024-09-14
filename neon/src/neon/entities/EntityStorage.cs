@@ -14,7 +14,14 @@ namespace neon
         private Dictionary<EntityID, HashSet<EntityID>> m_ParentEntities = new();
         private Dictionary<EntityID, EntityID> m_ChildEntities = new();
 
+        private EntityActiveStateNotifier m_ActiveStateNotifier;
+
         private Random random = new Random();
+
+        public EntityStorage(EntityActiveStateNotifier activeStateNotifier)
+        {
+            m_ActiveStateNotifier = activeStateNotifier;
+        }
 
         private UInt32 RandomUInt32()
         {
@@ -106,14 +113,7 @@ namespace neon
 
         public void RefreshActiveState(EntityID entityID)
         {
-			if (entityID.isComponent)
-			{
-				EntityID ownerID = entityID.GetParent();
-				Components.OnEntityActiveStateChanged(ownerID, entityID.activeInHierarchy);
-			} else
-			{
-				Components.OnEntityActiveStateChanged(entityID, entityID.activeInHierarchy);
-			}
+            m_ActiveStateNotifier.Raise(entityID, entityID.activeInHierarchy);
 
 			HashSet<EntityID> children = GetChildren(entityID);
 

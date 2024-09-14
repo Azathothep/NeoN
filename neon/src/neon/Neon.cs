@@ -6,21 +6,23 @@
         {
             // Entities
 
-            IEntityStorage entityStorage = new EntityStorage();
+            EntityActiveStateNotifier activeStateNotifier = new EntityActiveStateNotifier();
+
+            IEntityStorage entityStorage = new EntityStorage(activeStateNotifier);
 
             Entities.SetStorage(entityStorage);
 
             // Components
 
-            ComponentStorageNotifier notifier = new ComponentStorageNotifier();
+            ComponentStorageNotifier storageNotifier = new ComponentStorageNotifier();
 
-            IComponentStorage componentStorage = new ComponentStorage(notifier);
+            IComponentStorage componentStorage = new ComponentStorage(storageNotifier, activeStateNotifier);
 
             Components.SetStorage(componentStorage);
 
             // Queries
 
-            IQueryStorage queryStorage = new QueryStorage(componentStorage.IteratorProvider, notifier);
+            IQueryStorage queryStorage = new QueryStorage(componentStorage.IteratorProvider, storageNotifier);
 
             QueryBuilder.SetStorage(queryStorage);
         }

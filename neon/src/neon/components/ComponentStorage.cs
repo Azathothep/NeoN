@@ -165,12 +165,17 @@ namespace neon
 
         private ComponentStorageNotifier m_ComponentStorageNotifier;
 
+        private EntityActiveStateNotifier m_ActiveStateNotifier;
+
         private IComponentIteratorProvider m_IteratorProvider;
         public IComponentIteratorProvider IteratorProvider => m_IteratorProvider;
 
-        public ComponentStorage(ComponentStorageNotifier notifier)
+        public ComponentStorage(ComponentStorageNotifier storageNotifier, EntityActiveStateNotifier activeStateNotifier)
         {
-            m_ComponentStorageNotifier = notifier;
+            m_ComponentStorageNotifier = storageNotifier;
+            m_ActiveStateNotifier = activeStateNotifier;
+
+            m_ActiveStateNotifier.Event += OnEntityActiveStateChanged;
 
             m_IteratorProvider = new ComponentIteratorProvider(this);
         }
@@ -488,8 +493,11 @@ namespace neon
             Entities.Destroy(component.ID);
         }
 
-        public void OnEntityActiveStateChanged(EntityID entityID, bool newActiveState)
+        private void OnEntityActiveStateChanged(EntityID entityID, bool newActiveState)
         {
+            if (entityID.isComponent)
+                entityID = entityID.GetParent();
+
             if (!m_EntityToArchetype.TryGetValue(entityID, out (Archetype, int) archetypeRecord))
                 return;
 
