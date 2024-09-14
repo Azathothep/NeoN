@@ -41,7 +41,7 @@ namespace neon
 			}
 		}
 
-        public bool activeInHierarchy => GetFlag(Flag.ActiveParent) & GetFlag(Flag.Active);
+        public bool activeInHierarchy => GetFlag(Flag.Active | Flag.ActiveParent);
 
         public bool isComponent => GetFlag(Flag.Component);
 
@@ -56,9 +56,7 @@ namespace neon
         {
             this.m_ID = ((ulong)value) << 32;
 
-            SetFlag(Flag.Active, true);
-
-            Refresh();
+            SetFlag(Flag.Active | Flag.ActiveParent, true);
 
             SetFlag(Flag.Component, isComponent);
         }
@@ -74,7 +72,7 @@ namespace neon
         public bool GetFlag(Flag flag)
         {
             ulong result = m_ID & (ulong)flag;
-            return result != 0;
+            return result == (ulong)flag;
         }
 
         public T? Add<T>() where T : class, IComponent, new() => neon.Components.Add<T>(this);

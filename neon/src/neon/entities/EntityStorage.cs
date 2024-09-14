@@ -60,7 +60,7 @@ namespace neon
         public void SetRelation(EntityID parentID, EntityID childID)
         {
             if (parentID == null || childID == null)
-                throw new ArgumentNullException("Trying to SetRelation with a null parameter");
+                throw new ArgumentNullException("Trying to Set Relation with a null parameter");
 
             if (!m_ParentEntities.TryGetValue(parentID, out HashSet<EntityID>? childSet))
             {
@@ -72,7 +72,7 @@ namespace neon
 
             m_ChildEntities.Add(childID, parentID);
 
-            //childID.Refresh();
+            childID.Refresh();
         }
 
         private void RemoveRelation(EntityID parentID, EntityID childID)
