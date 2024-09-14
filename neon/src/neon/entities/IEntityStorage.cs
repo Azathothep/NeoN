@@ -15,7 +15,7 @@ namespace neon
 
         public EntityID GetParent(EntityID entityID);
 
-        public HashSet<EntityID> GetChildren(EntityID entityID, bool includeComponents = true);
+        public EntityID[] GetChildren(EntityID entityID, bool includeComponents = true);
 
         public void RefreshFamily(EntityID entityID);
     }

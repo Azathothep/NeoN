@@ -92,5 +92,15 @@ namespace neon
         }
 
         public static EntityID GetOwner<T>(T component) where T : class, IComponent => storage.GetOwner(component);
+
+        public static T[] GetInChildren<T>(EntityID entityID, bool propagate = false) where T : class, IComponent
+        {
+            return storage.GetInChildren<T>(entityID, propagate);
+        }
+
+        public static T[] GetInParents<T>(EntityID entityID) where T : class, IComponent
+        {
+            return storage.GetInParents<T>(entityID);
+        }
     }
 }

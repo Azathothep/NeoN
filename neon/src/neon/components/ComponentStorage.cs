@@ -519,5 +519,42 @@ namespace neon
                 m_ComponentStorageNotifier.Raise(cID);
             }
         }
+
+        public T[] GetInChildren<T>(EntityID entityID, bool propagate = false) where T : class, IComponent
+        {
+            List<T> components = new List<T>();
+
+            EntityID[] children = entityID.GetChildren(false);
+
+            foreach (var child in children)
+            {
+                T? component = child.Get<T>();
+                if (component != null)
+                    components.Add(component);
+
+                if (propagate)
+                    components.AddRange(GetInChildren<T>(child, propagate));
+            }
+
+            return components.ToArray();
+        }
+
+        public T[] GetInParents<T>(EntityID entityID) where T : class, IComponent
+        {
+            List<T> components = new List<T>();
+
+            EntityID parent = entityID.GetParent();
+
+            while (parent != null)
+            {
+                T? component = parent.Get<T>();
+                if (component != null)
+                    components.Add(component);
+
+                parent = parent.GetParent();
+            }
+
+            return components.ToArray();
+        }
     }
 }

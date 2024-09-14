@@ -45,7 +45,7 @@ namespace neon
         {
             Components.RemoveAll(entityID);
          
-            HashSet<EntityID> children = GetChildren(entityID); // logically, must not include any children components because they should have been destroyed just previously
+            EntityID[] children = GetChildren(entityID); // logically, must not include any children components because they should have been destroyed just previously
 
             foreach (var c in children)
                 Destroy(c);
@@ -72,7 +72,7 @@ namespace neon
 
             m_ChildEntities.Add(childID, parentID);
 
-            childID.Refresh();
+            childID.Refresh(EntityID.RefreshMode.ActiveState | EntityID.RefreshMode.Depth);
         }
 
         private void RemoveRelation(EntityID parentID, EntityID childID)
@@ -92,12 +92,12 @@ namespace neon
             return null;
         }
 
-        public HashSet<EntityID> GetChildren(EntityID entityID, bool includeComponents = true)
+        public EntityID[] GetChildren(EntityID entityID, bool includeComponents = true)
         {
             if (m_ParentEntities.TryGetValue(entityID, out HashSet<EntityID>? children))
             {
                 if (includeComponents)
-                    return children;
+                    return children.ToArray();
 
                 HashSet<EntityID> childrenSet = new HashSet<EntityID>();
                 foreach (var c in children)
@@ -106,21 +106,21 @@ namespace neon
                         childrenSet.Add(c);
                 }
 
-                return childrenSet;
+                return childrenSet.ToArray();
             }
 
-            return new HashSet<EntityID>();
+            return new EntityID[0];
         }
 
         public void RefreshFamily(EntityID entityID)
         {
             OnEntityRefreshed(entityID);
 
-			HashSet<EntityID> children = GetChildren(entityID);
+			EntityID[] children = GetChildren(entityID);
 
-            foreach (var c in children)
+            foreach (var child in children)
             {
-                c.Refresh();
+                child.Refresh(EntityID.RefreshMode.ActiveState);
             }
         }
 

@@ -23,5 +23,9 @@ namespace neon
         public void Remove(EntityID entityID);
 
         public EntityID GetOwner<T>(T component) where T : class, IComponent;
+
+        public T[] GetInChildren<T>(EntityID entityID, bool propagate = false) where T : class, IComponent;
+
+        public T[] GetInParents<T>(EntityID entityID) where T : class, IComponent;
     }
 }

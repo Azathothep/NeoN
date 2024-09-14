@@ -13,7 +13,18 @@ namespace neon
         {
             Active = 1,
             ActiveParent = 2,
-            Component = 4
+            Component = 4,
+            Flag4 = 8,
+            Flag5 = 16,
+            Flag6 = 32,
+            Flag7 = 64,
+            Flag8 = 128
+        }
+
+        public enum RefreshMode
+        {
+            ActiveState = 1,
+            Depth = 2
         }
 
         public bool active
@@ -28,28 +39,30 @@ namespace neon
             }
         }
 
-		public bool activeParent
-		{
-			get => GetFlag(Flag.ActiveParent);
-			private set
-			{
+        public bool activeParent
+        {
+            get => GetFlag(Flag.ActiveParent);
+            private set
+            {
                 if (activeParent == value)
                     return;
 
-				SetFlag(Flag.ActiveParent, value);
-				Entities.RefreshFamily(this);
-			}
-		}
+                SetFlag(Flag.ActiveParent, value);
+                Entities.RefreshFamily(this);
+            }
+        }
 
         public bool activeInHierarchy => GetFlag(Flag.Active | Flag.ActiveParent);
 
         public bool isComponent => GetFlag(Flag.Component);
 
-        public void Refresh()
-        {
-            EntityID parent = this.GetParent();
-
-            this.activeParent = parent != null ? parent.activeInHierarchy : true;
+        public int depth {
+            get => (int)((m_ID >> 8) & 63);
+            private set {
+                ulong shiftedValue = (ulong)value << 8;
+                m_ID = m_ID & ~((ulong)63 << 8);
+                m_ID = m_ID | shiftedValue;
+            }
         }
 
         public EntityID(UInt32 value, bool isComponent = false)
@@ -75,11 +88,44 @@ namespace neon
             return result == (ulong)flag;
         }
 
+        public void Refresh(RefreshMode mode)
+        {
+            EntityID parent = this.GetParent();
+
+            if (Has(mode, RefreshMode.ActiveState))
+                this.activeParent = parent != null ? parent.activeInHierarchy : true;
+
+            if (Has(mode, RefreshMode.Depth))
+                this.depth = CalculateDepth();
+        }
+
+        private bool Has(RefreshMode mode, RefreshMode flag)
+        {
+            return (mode & RefreshMode.ActiveState) == RefreshMode.ActiveState;
+        }
+
+        private int CalculateDepth()
+        {
+            int depth = 0;
+
+            EntityID parent = Entities.GetParent(this);
+
+            while (parent != null)
+            {
+                depth++;
+                parent = Entities.GetParent(parent);
+            }
+
+            return depth;
+        }
+
         public T? Add<T>() where T : class, IComponent, new() => neon.Components.Add<T>(this);
 
         public T? Add<T>(T inputComponent) where T : class, IComponent => neon.Components.Add<T>(this, inputComponent);
 
         public T? Get<T>() where T : class, IComponent => neon.Components.Get<T>(this);
+
+        public bool TryGet<T>(out T? component) where T : class, IComponent => neon.Components.TryGet(this, out component);
 
         public (T1?, T2?) Get<T1, T2>() where T1 : class, IComponent where T2 : class, IComponent => neon.Components.Get<T1, T2>(this);
 
@@ -91,7 +137,11 @@ namespace neon
 
         public EntityID GetParent() => Entities.GetParent(this);
 
-        public HashSet<EntityID> GetChildren() => Entities.GetChildren(this);
+        public EntityID[] GetChildren(bool includeComponents = true) => Entities.GetChildren(this, includeComponents);
+
+        public T[] GetInChildren<T>(bool propagate = false) where T : class, IComponent => Components.GetInChildren<T> (this, propagate);
+
+        public T[] GetInParents<T>() where T : class, IComponent => Components.GetInParents<T>(this);
 
         public void SetParent(EntityID parentID) => Entities.SetRelation(parentID, this);
 
