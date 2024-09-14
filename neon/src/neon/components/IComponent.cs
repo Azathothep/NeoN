@@ -2,7 +2,7 @@
 {
     public interface IComponent
     {
-        public EntityID ID { get; set; }
+        public EntityID EntityID { get; set; }
 
         public IComponent Clone();
     }

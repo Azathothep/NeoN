@@ -149,14 +149,6 @@ namespace neon
                 Get<T4>(m_ColumnIndices[3]));
         }
 
-        private IComponent Get(int columnIndice)
-        {
-            if (columnIndice < 0)
-                return null;
-
-            return m_Archetypes[m_ArchetypeIndex].Item1.Columns[columnIndice][m_ArchetypePosition];
-        }
-
         private T? Get<T>(int columnIndice) where T : class, IComponent
         {
             if (columnIndice < 0)

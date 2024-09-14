@@ -4,7 +4,7 @@ namespace neon
 {
     public class Transform : IComponent
     {
-        public EntityID ID { get; set; }
+        public EntityID EntityID { get; set; }
 
         public Vector2 position;
         public Vector2 rotation;

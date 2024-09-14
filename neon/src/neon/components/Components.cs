@@ -90,5 +90,7 @@ namespace neon
         {
             storage.Remove(entityID);
         }
+
+        public static EntityID GetOwner<T>(T component) where T : class, IComponent => storage.GetOwner(component);
     }
 }

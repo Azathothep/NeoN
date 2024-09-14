@@ -11,24 +11,20 @@ namespace neon
 
         public enum Flag
         {
-            Active = 0,
-            ActiveParent = 1,
-            Component = 2
+            Active = 1,
+            ActiveParent = 2,
+            Component = 4
         }
 
         public bool active
         {
-            get => GetFlag(Flag.Active); // Checking if last bit of ID is 1 or 0
+            get => GetFlag(Flag.Active);
             set {
-                if (!active && value == true)
-                {
-                    SetFlag(Flag.Active, true);
-                    Entities.RefreshActiveState(this);
-                } else if (active && value == false)
-                {
-                    SetFlag(Flag.Active, false);
-                    Entities.RefreshActiveState(this);
-                }
+                if (active == value)
+                    return;
+
+                SetFlag(Flag.Active, value);
+                Entities.RefreshFamily(this);
             }
         }
 
@@ -37,16 +33,11 @@ namespace neon
 			get => GetFlag(Flag.ActiveParent);
 			private set
 			{
-				if (!activeParent && value == true)
-				{
-					SetFlag(Flag.ActiveParent, true);
-					Entities.RefreshActiveState(this);
-				}
-				else if (activeParent && value == false)
-				{
-					SetFlag(Flag.ActiveParent, false);
-					Entities.RefreshActiveState(this);
-				}
+                if (activeParent == value)
+                    return;
+
+				SetFlag(Flag.ActiveParent, value);
+				Entities.RefreshFamily(this);
 			}
 		}
 
@@ -54,7 +45,7 @@ namespace neon
 
         public bool isComponent => GetFlag(Flag.Component);
 
-        public void RefreshActiveParent()
+        public void Refresh()
         {
             EntityID parent = this.GetParent();
 
@@ -63,11 +54,11 @@ namespace neon
 
         public EntityID(UInt32 value, bool isComponent = false)
         {
-            this.m_ID = ((ulong)value << 32);
+            this.m_ID = ((ulong)value) << 32;
 
             SetFlag(Flag.Active, true);
 
-            RefreshActiveParent();
+            Refresh();
 
             SetFlag(Flag.Component, isComponent);
         }
@@ -75,24 +66,19 @@ namespace neon
         private void SetFlag(Flag flag, bool state)
         {
             if (state)
-            {
-                ulong mask = ((ulong)1 << (int)flag);
-                m_ID = m_ID | mask;
-            } else
-            {
-                ulong mask = ~((ulong)1 << (int)flag);
-                m_ID = m_ID & mask;
-            }
+                m_ID = m_ID | (ulong)flag;
+            else
+                m_ID = m_ID & ~(ulong)flag;
         }
 
         public bool GetFlag(Flag flag)
         {
-            ulong mask = ((ulong)1 << (int)flag);
-            ulong result = (m_ID & mask);
+            ulong result = m_ID & (ulong)flag;
             return result != 0;
         }
 
         public T? Add<T>() where T : class, IComponent, new() => neon.Components.Add<T>(this);
+
         public T? Add<T>(T inputComponent) where T : class, IComponent => neon.Components.Add<T>(this, inputComponent);
 
         public T? Get<T>() where T : class, IComponent => neon.Components.Get<T>(this);
@@ -103,13 +89,13 @@ namespace neon
 
         public (T1?, T2?, T3?, T4?) Get<T1, T2, T3, T4>() where T1 : class, IComponent where T2 : class, IComponent where T3 : class, IComponent where T4 : class, IComponent => neon.Components.Get<T1, T2, T3, T4>(this);
 
+        public void Remove<T>() where T : class, IComponent => Components.Remove<T>(this);
 
-        public void Remove<T>() where T : class, IComponent => neon.Components.Remove<T>(this);
+        public EntityID GetParent() => Entities.GetParent(this);
 
-        public EntityID? GetParent() => neon.Entities.GetParent(this);
-        public HashSet<EntityID> GetChildren() => neon.Entities.GetChildren(this);
+        public HashSet<EntityID> GetChildren() => Entities.GetChildren(this);
 
-        public void SetParent(EntityID parentID) => neon.Entities.SetRelation(parentID, this);
+        public void SetParent(EntityID parentID) => Entities.SetRelation(parentID, this);
 
         public static implicit operator UInt32(EntityID entity)
         {

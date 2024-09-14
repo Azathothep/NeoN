@@ -86,9 +86,10 @@ namespace neon
 
             var enumerator = (IEnumerator<T>)m_IterableQuery.Create();
 
-			if (m_Mode == QueryResultMode.Safe) // && is dirty DOESN'T UPDATE IF DIABLING COMPONENT OR ENTITY
+			if (m_Mode == QueryResultMode.Safe)
 			{
                 Debug.WriteLine("Dirty: rebuilding");
+
 				m_Storage = MakeStorage(enumerator);
                 m_IsDirty = false;
 				return (IEnumerator<T>)m_Storage.GetEnumerator();

@@ -21,5 +21,7 @@ namespace neon
         public void Remove<T>(EntityID entityID) where T : class, IComponent;
 
         public void Remove(EntityID entityID);
+
+        public EntityID GetOwner<T>(T component) where T : class, IComponent;
     }
 }

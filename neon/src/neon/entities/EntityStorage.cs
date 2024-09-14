@@ -17,7 +17,6 @@ namespace neon
         private EntityActiveStateNotifier m_ActiveStateNotifier;
 
         private Random random = new Random();
-
         public EntityStorage(EntityActiveStateNotifier activeStateNotifier)
         {
             m_ActiveStateNotifier = activeStateNotifier;
@@ -72,6 +71,8 @@ namespace neon
             childSet.Add(childID);
 
             m_ChildEntities.Add(childID, parentID);
+
+            //childID.Refresh();
         }
 
         private void RemoveRelation(EntityID parentID, EntityID childID)
@@ -83,7 +84,7 @@ namespace neon
                 m_ChildEntities.Remove(childID);
         }
 
-        public EntityID? GetParent(EntityID entityID)
+        public EntityID GetParent(EntityID entityID)
         {
             if (m_ChildEntities.TryGetValue(entityID, out EntityID? parent))
                 return parent;
@@ -111,16 +112,21 @@ namespace neon
             return new HashSet<EntityID>();
         }
 
-        public void RefreshActiveState(EntityID entityID)
+        public void RefreshFamily(EntityID entityID)
         {
-            m_ActiveStateNotifier.Raise(entityID, entityID.activeInHierarchy);
+            OnEntityRefreshed(entityID);
 
 			HashSet<EntityID> children = GetChildren(entityID);
 
             foreach (var c in children)
             {
-                c.RefreshActiveParent();
+                c.Refresh();
             }
+        }
+
+        private void OnEntityRefreshed(EntityID entityID)
+        {
+            m_ActiveStateNotifier.Raise(entityID, entityID.activeInHierarchy);
         }
     }
 }

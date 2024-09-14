@@ -2,7 +2,7 @@
 {
     public class BoxCollider : IComponent
     {
-        public EntityID ID {get; set;}
+        public EntityID EntityID {get; set;}
         public BoxCollider()
         {
            

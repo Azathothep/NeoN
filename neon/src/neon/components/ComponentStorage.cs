@@ -231,9 +231,9 @@ namespace neon
 
         public T? Add<T>(EntityID entityID, T component) where T : class, IComponent
         {
-            component.ID = Entities.GetID(true);
+            component.EntityID = Entities.GetID(true);
 
-            component.ID.SetParent(entityID);
+            component.EntityID.SetParent(entityID);
 
             ComponentID componentID = Components.GetID<T>();
 
@@ -488,9 +488,11 @@ namespace neon
             return components;
         }
 
+        public EntityID GetOwner<T>(T component) where T : class, IComponent => component.EntityID.GetParent();
+
         private void Destroy(IComponent component)
         {
-            Entities.Destroy(component.ID);
+            Entities.Destroy(component.EntityID);
         }
 
         private void OnEntityActiveStateChanged(EntityID entityID, bool newActiveState)

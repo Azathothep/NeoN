@@ -19,10 +19,10 @@ namespace neon
 
         public static void SetRelation(EntityID parentID, EntityID childID) => storage.SetRelation(parentID, childID);
 
-        public static EntityID? GetParent(EntityID entityID) => storage.GetParent(entityID);
+        public static EntityID GetParent(EntityID entityID) => storage.GetParent(entityID);
 
         public static HashSet<EntityID> GetChildren(EntityID entityID, bool includeComponents = true) => storage.GetChildren(entityID, includeComponents);
 
-        public static void RefreshActiveState(EntityID entityID) => storage.RefreshActiveState(entityID);
+        public static void RefreshFamily(EntityID entityID) => storage.RefreshFamily(entityID);
     }
 }

@@ -13,10 +13,10 @@ namespace neon
 
         public void SetRelation(EntityID parentID, EntityID childID);
 
-        public EntityID? GetParent(EntityID entityID);
+        public EntityID GetParent(EntityID entityID);
 
         public HashSet<EntityID> GetChildren(EntityID entityID, bool includeComponents = true);
 
-        public void RefreshActiveState(EntityID entityID);
+        public void RefreshFamily(EntityID entityID);
     }
 }
