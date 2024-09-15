@@ -471,14 +471,14 @@ namespace neon
         {
             List<IComponent> components = archetype.RemoveEntity(row);
 
-            m_ArchetypeToEntities[archetype.ID].Remove(entityID);
-
             List<EntityID> entities = m_ArchetypeToEntities[archetype.ID];
-            for (int i = row; i < entities.Count; i++)
-            {
-                (Archetype a, int r) = m_EntityToArchetype[entities[i]];
-                m_EntityToArchetype[entities[i]] = (a, r - 1);
-            }
+            int maxIndex = entities.Count - 1;
+            EntityID lastEntity = entities[maxIndex];
+
+            m_EntityToArchetype[lastEntity] = (archetype, row);
+
+            m_ArchetypeToEntities[archetype.ID][row] = lastEntity;
+            m_ArchetypeToEntities[archetype.ID].RemoveAt(maxIndex);
 
             foreach (var cID in archetype.ComponentSet.ComponentIDs)
             {

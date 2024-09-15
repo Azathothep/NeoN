@@ -60,16 +60,16 @@ namespace neon
             return m_Columns[0].Count - 1;
         }
 
-        // MUST UPDATE OTHER COMPONENT'S ROWS !!!
-
         public List<IComponent> RemoveEntity(int row)
         {
             List<IComponent> components = new List<IComponent>();
+            int maxIndex = m_Columns[0].Count - 1;
 
             for (int i = 0; i < m_Columns.Count; i++)
             {
                 components.Add(m_Columns[i][row]);
-                m_Columns[i].RemoveAt(row);
+                m_Columns[i][row] = m_Columns[i][maxIndex];
+                m_Columns[i].RemoveAt(maxIndex);
             }
 
             return components;

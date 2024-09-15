@@ -8,6 +8,8 @@ namespace neoNTests
         [TestMethod]
         public void SimpleAddTest()
         {
+            Neon.Initialize();
+
             List<EntityID> entities = new List<EntityID>(1000);
 
             for (int i = 0; i < 1000; i++)
@@ -33,6 +35,8 @@ namespace neoNTests
         [TestMethod]
         public void ComplexAddTest()
         {
+            Neon.Initialize();
+
             List<EntityID> simpleEntities = new List<EntityID>(500);
             List<EntityID> complexEntities = new List<EntityID>(500);
 
@@ -80,6 +84,8 @@ namespace neoNTests
         [TestMethod]
         public void ComplexAddRemoveTest()
         {
+            Neon.Initialize();
+
             List<EntityID> simpleEntities = new List<EntityID>(500);
             List<EntityID> complexEntities = new List<EntityID>(500);
             List<EntityID> voidEntities = new List<EntityID>(500);
