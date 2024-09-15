@@ -10,11 +10,9 @@ namespace neon
         Uncached
     }
 
-    public class QueryBuilder
+    public static class QueryBuilder
     {
         private static IQueryStorage storage;
-
-        private QueryBuilder() { }
 
         public static void SetStorage(IQueryStorage storage) {
             QueryBuilder.storage = storage;

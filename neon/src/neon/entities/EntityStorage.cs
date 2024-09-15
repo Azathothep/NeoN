@@ -14,13 +14,9 @@ namespace neon
         private Dictionary<EntityID, HashSet<EntityID>> m_ParentEntities = new();
         private Dictionary<EntityID, EntityID> m_ChildEntities = new();
 
-        private EntityActiveStateNotifier m_ActiveStateNotifier;
-
         private Random random = new Random();
-        public EntityStorage(EntityActiveStateNotifier activeStateNotifier)
-        {
-            m_ActiveStateNotifier = activeStateNotifier;
-        }
+
+        public EntityStorage() { }
 
         private UInt32 RandomUInt32()
         {
@@ -114,7 +110,7 @@ namespace neon
 
         public void RefreshFamily(EntityID entityID)
         {
-            OnEntityRefreshed(entityID);
+            Hooks.Trigger(entityID.activeInHierarchy ? EntityHook.OnEnabled : EntityHook.OnDisabled, entityID);
 
 			EntityID[] children = GetChildren(entityID);
 
@@ -122,11 +118,6 @@ namespace neon
             {
                 child.Refresh(EntityID.RefreshMode.ActiveState);
             }
-        }
-
-        private void OnEntityRefreshed(EntityID entityID)
-        {
-            m_ActiveStateNotifier.Raise(entityID, entityID.activeInHierarchy);
         }
     }
 }

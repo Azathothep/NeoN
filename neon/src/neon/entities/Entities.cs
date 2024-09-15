@@ -2,11 +2,9 @@
 
 namespace neon
 {
-    public class Entities
+    public static class Entities
     {
         private static IEntityStorage storage;
-
-        private Entities() { }
 
         public static void SetStorage(IEntityStorage storage)
         {

@@ -165,19 +165,17 @@ namespace neon
 
         private ComponentStorageNotifier m_ComponentStorageNotifier;
 
-        private EntityActiveStateNotifier m_ActiveStateNotifier;
-
         private IComponentIteratorProvider m_IteratorProvider;
         public IComponentIteratorProvider IteratorProvider => m_IteratorProvider;
 
-        public ComponentStorage(ComponentStorageNotifier storageNotifier, EntityActiveStateNotifier activeStateNotifier)
+        public ComponentStorage(ComponentStorageNotifier storageNotifier)
         {
             m_ComponentStorageNotifier = storageNotifier;
-            m_ActiveStateNotifier = activeStateNotifier;
-
-            m_ActiveStateNotifier.Event += OnEntityActiveStateChanged;
 
             m_IteratorProvider = new ComponentIteratorProvider(this);
+
+            Hooks.Add(EntityHook.OnEnabled, (o) => OnEntityActiveStateChanged((EntityID)o, true));
+            Hooks.Add(EntityHook.OnDisabled, (o) => OnEntityActiveStateChanged((EntityID)o, false));
         }
 
         public T? Get<T>(EntityID entityID) where T : class, IComponent
@@ -246,6 +244,8 @@ namespace neon
 
                 AddEntityToArchetype(entityID, new List<IComponent> { component }, archetype);
 
+                Hooks.Trigger<ComponentHook, T>(ComponentHook.OnAdded, entityID);
+
                 return component;
             }
 
@@ -303,6 +303,8 @@ namespace neon
                 }
             }
 
+            Hooks.Trigger<ComponentHook, T>(ComponentHook.OnAdded, entityID);
+
             return component;
         }
 
@@ -329,6 +331,9 @@ namespace neon
                 IComponent component = RemoveEntityFromArchetype(entityID, archetype, row)[0];
                 m_EntityToArchetype.Remove(entityID);
                 Destroy(component);
+
+                Hooks.Trigger<ComponentHook, T>(ComponentHook.OnRemoved, entityID);
+
                 return;
             }
 
@@ -364,6 +369,8 @@ namespace neon
 
                 AddEntityToArchetype(entityID, components, nextArchetype);
             }
+
+            Hooks.Trigger<ComponentHook, T>(ComponentHook.OnRemoved, entityID);
         }
 
         public void Remove(EntityID entityID)

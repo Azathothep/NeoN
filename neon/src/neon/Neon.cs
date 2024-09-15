@@ -4,11 +4,15 @@
     {
         public static void Initialize()
         {
+            // Hooks
+
+            IHookStorage hookStorage = new HookStorage();
+
+            Hooks.SetStorage(hookStorage);
+
             // Entities
 
-            EntityActiveStateNotifier activeStateNotifier = new EntityActiveStateNotifier();
-
-            IEntityStorage entityStorage = new EntityStorage(activeStateNotifier);
+            IEntityStorage entityStorage = new EntityStorage();
 
             Entities.SetStorage(entityStorage);
 
@@ -16,7 +20,7 @@
 
             ComponentStorageNotifier storageNotifier = new ComponentStorageNotifier();
 
-            IComponentStorage componentStorage = new ComponentStorage(storageNotifier, activeStateNotifier);
+            IComponentStorage componentStorage = new ComponentStorage(storageNotifier);
 
             Components.SetStorage(componentStorage);
 

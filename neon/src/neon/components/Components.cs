@@ -8,11 +8,9 @@ using System.Globalization;
 
 namespace neon
 {
-    public partial class Components
+    public static partial class Components
     {
         private static IComponentStorage storage;
-
-        private Components() { }
 
         public static void SetStorage(IComponentStorage storage)
         {
