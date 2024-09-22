@@ -2,9 +2,9 @@
 {
     public interface IHookStorage
     {
-        public void Trigger<HookID>(HookID hook, object o = null) where HookID : struct, IConvertible;
+        public HookTrigger<HookID> Create<HookID>() where HookID : struct, IConvertible;
 
-        public void Trigger<HookID, T>(HookID hook, object o = null) where HookID : struct, IConvertible;
+        public HookTrigger<HookID> Create<HookID, T>() where HookID : struct, IConvertible;
 
         public void Add<HookID>(HookID hook, Action action, object o) where HookID : struct, IConvertible;
 

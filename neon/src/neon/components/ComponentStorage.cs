@@ -168,6 +168,8 @@ namespace neon
         private IComponentIteratorProvider m_IteratorProvider;
         public IComponentIteratorProvider IteratorProvider => m_IteratorProvider;
 
+        private Dictionary<ComponentID, HookTrigger<ComponentHook>> m_HookTriggers = new();
+
         public ComponentStorage(ComponentStorageNotifier storageNotifier)
         {
             m_ComponentStorageNotifier = storageNotifier;
@@ -244,7 +246,7 @@ namespace neon
 
                 AddEntityToArchetype(entityID, new List<IComponent> { component }, archetype);
 
-                Hooks.Trigger<ComponentHook, T>(ComponentHook.OnAdded, entityID);
+                Trigger<T>(ComponentHook.OnAdded, componentID, entityID);
 
                 return component;
             }
@@ -303,7 +305,7 @@ namespace neon
                 }
             }
 
-            Hooks.Trigger<ComponentHook, T>(ComponentHook.OnAdded, entityID);
+            Trigger<T>(ComponentHook.OnAdded, componentID, entityID);
 
             return component;
         }
@@ -332,7 +334,7 @@ namespace neon
                 m_EntityToArchetype.Remove(entityID);
                 Destroy(component);
 
-                Hooks.Trigger<ComponentHook, T>(ComponentHook.OnRemoved, entityID);
+                Trigger<T>(ComponentHook.OnRemoved, componentID, entityID);
 
                 return;
             }
@@ -370,7 +372,7 @@ namespace neon
                 AddEntityToArchetype(entityID, components, nextArchetype);
             }
 
-            Hooks.Trigger<ComponentHook, T>(ComponentHook.OnRemoved, entityID);
+            Trigger<T>(ComponentHook.OnRemoved, componentID, entityID);
         }
 
         public void Remove(EntityID entityID)
@@ -562,6 +564,17 @@ namespace neon
             }
 
             return components.ToArray();
+        }
+
+        private void Trigger<T>(ComponentHook hook, ComponentID id, object o) where T : class, IComponent
+        {
+            if (!m_HookTriggers.TryGetValue(id, out HookTrigger<ComponentHook> hookTrigger))
+            {
+                hookTrigger = Hooks.Create<ComponentHook, T>();
+                m_HookTriggers.Add(id, hookTrigger);
+            }
+
+            hookTrigger.Raise(hook, o);
         }
     }
 }

@@ -9,9 +9,9 @@
             Hooks.storage = storage;
         }
 
-        public static void Trigger<HookID>(HookID hook, object o) where HookID : struct, IConvertible => storage.Trigger<HookID>(hook, o);
+        public static HookTrigger<HookID> Create<HookID>() where HookID : struct, IConvertible => storage.Create<HookID>();
 
-        public static void Trigger<HookID, T>(HookID hook, object o) where HookID : struct, IConvertible => storage.Trigger<HookID, T>(hook, o);
+        public static HookTrigger<HookID> Create<HookID, T>() where HookID : struct, IConvertible => storage.Create<HookID, T>();
 
         public static void Add<HookID>(HookID hook, Action action, object o) where HookID : struct, IConvertible => storage.Add<HookID>(hook, action, o);
 

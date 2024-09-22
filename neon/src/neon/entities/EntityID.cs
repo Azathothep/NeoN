@@ -35,7 +35,7 @@ namespace neon
                     return;
 
                 SetFlag(Flag.Active, value);
-                Entities.RefreshFamily(this);
+                Entities.UpdateState(this);
             }
         }
 
@@ -48,7 +48,7 @@ namespace neon
                     return;
 
                 SetFlag(Flag.ActiveParent, value);
-                Entities.RefreshFamily(this);
+                Entities.UpdateState(this);
             }
         }
 

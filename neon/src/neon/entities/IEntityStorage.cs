@@ -17,6 +17,6 @@ namespace neon
 
         public EntityID[] GetChildren(EntityID entityID, bool includeComponents = true);
 
-        public void RefreshFamily(EntityID entityID);
+        public void UpdateState(EntityID entityID);
     }
 }

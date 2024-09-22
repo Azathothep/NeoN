@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Diagnostics;
+using System.Net;
 
 namespace neon
 {
@@ -8,7 +9,37 @@ namespace neon
 
         public HookStorage() { }
 
-        public void Trigger<HookID>(HookID hook, object o) where HookID : struct, IConvertible
+        public HookTrigger<HookID> Create<HookID>() where HookID : struct, IConvertible
+        {
+            IHookType type = new HookType<HookID>();
+
+            if (m_Hooks.ContainsKey(type))
+                return null;
+
+            IHookMap map = new HookMap<HookID>();
+            m_Hooks.Add(type, map);
+
+            HookTrigger<HookID> trigger = new HookTrigger<HookID>((h, o) => Trigger(h, o));
+
+            return trigger;
+        }
+
+        public HookTrigger<HookID> Create<HookID, T>() where HookID : struct, IConvertible
+        {
+            IHookType type = new HookType<HookID, T>();
+
+            if (m_Hooks.ContainsKey(type))
+                return null;
+
+            IHookMap map = new HookMap<HookID>();
+            m_Hooks.Add(type, map);
+
+            HookTrigger<HookID> trigger = new HookTrigger<HookID>((h, o) => Trigger<HookID, T>(h, o));
+
+            return trigger;
+        }
+
+        private void Trigger<HookID>(HookID hook, object o) where HookID : struct, IConvertible
         {
             IHookType type = new HookType<HookID>();
 
@@ -20,15 +51,12 @@ namespace neon
             hookMap.Trigger(hook, o);
         }
 
-        public void Trigger<HookID, T>(HookID hook, object o) where HookID : struct, IConvertible
+        private void Trigger<HookID, T>(HookID hook, object o) where HookID : struct, IConvertible
         {
             IHookType type = new HookType<HookID, T>();
 
             if (!m_Hooks.TryGetValue(type, out IHookMap map))
-            {
-                map = new HookMap<HookID>();
-                m_Hooks.Add(type, map);
-            }
+                return;
 
             HookMap<HookID> hookMap = (HookMap<HookID>)map;
 
@@ -41,8 +69,8 @@ namespace neon
 
             if (!m_Hooks.TryGetValue(type, out IHookMap map))
             {
-                map = new HookMap<HookID>();
-                m_Hooks.Add(type, map);
+                Debug.WriteLine($"Trying to hook to {typeof(HookID)} but it hasn't been created yet");
+                return;
             }
 
             HookMap<HookID> hookMap = (HookMap<HookID>)map;
@@ -56,8 +84,8 @@ namespace neon
 
             if (!m_Hooks.TryGetValue(type, out IHookMap map))
             {
-                map = new HookMap<HookID>();
-                m_Hooks.Add(type, map);
+                Debug.WriteLine($"Trying to hook to {typeof(HookID)} but it hasn't been created yet");
+                return;
             }
 
             HookMap<HookID> hookMap = (HookMap<HookID>)map;
@@ -71,8 +99,8 @@ namespace neon
 
             if (!m_Hooks.TryGetValue(type, out IHookMap map))
             {
-                map = new HookMap<HookID>();
-                m_Hooks.Add(type, map);
+                Debug.WriteLine($"Trying to hook to {typeof(HookID)}, {typeof(T)} but it hasn't been created yet");
+                return;
             }
 
             HookMap<HookID> hookMap = (HookMap<HookID>)map;
@@ -86,8 +114,8 @@ namespace neon
 
             if (!m_Hooks.TryGetValue(type, out IHookMap map))
             {
-                map = new HookMap<HookID>();
-                m_Hooks.Add(type, map);
+                Debug.WriteLine($"Trying to hook to {typeof(HookID)}, {typeof(T)} but it hasn't been created yet");
+                return;
             }
 
             HookMap<HookID> hookMap = (HookMap<HookID>)map;

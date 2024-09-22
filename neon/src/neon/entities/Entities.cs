@@ -21,6 +21,6 @@ namespace neon
 
         public static EntityID[] GetChildren(EntityID entityID, bool includeComponents = true) => storage.GetChildren(entityID, includeComponents);
 
-        public static void RefreshFamily(EntityID entityID) => storage.RefreshFamily(entityID);
+        public static void UpdateState(EntityID entityID) => storage.UpdateState(entityID);
     }
 }

@@ -16,7 +16,11 @@ namespace neon
 
         private Random random = new Random();
 
-        public EntityStorage() { }
+        private HookTrigger<EntityHook> m_HookTrigger;
+
+        public EntityStorage() {
+            m_HookTrigger = Hooks.Create<EntityHook>();
+        }
 
         private UInt32 RandomUInt32()
         {
@@ -70,8 +74,8 @@ namespace neon
 
             childID.Refresh(EntityID.RefreshMode.ActiveState | EntityID.RefreshMode.Depth);
 
-            Hooks.Trigger(EntityHook.OnNewChild, parentID);
-            Hooks.Trigger(EntityHook.OnNewParent, childID);
+            m_HookTrigger.Raise(EntityHook.OnNewChild, parentID);
+            m_HookTrigger.Raise(EntityHook.OnNewParent, childID);
         }
 
         private void RemoveRelation(EntityID parentID, EntityID childID)
@@ -82,8 +86,8 @@ namespace neon
             if (m_ChildEntities.ContainsKey(childID))
                 m_ChildEntities.Remove(childID);
 
-            Hooks.Trigger(EntityHook.OnNewChild, parentID);
-            Hooks.Trigger(EntityHook.OnNewParent, childID);
+            m_HookTrigger.Raise(EntityHook.OnNewChild, parentID);
+            m_HookTrigger.Raise(EntityHook.OnNewParent, childID);
         }
 
         public EntityID GetParent(EntityID entityID)
@@ -114,9 +118,9 @@ namespace neon
             return new EntityID[0];
         }
 
-        public void RefreshFamily(EntityID entityID)
+        public void UpdateState(EntityID entityID)
         {
-            Hooks.Trigger(entityID.activeInHierarchy ? EntityHook.OnEnabled : EntityHook.OnDisabled, entityID);
+            m_HookTrigger.Raise(entityID.activeInHierarchy ? EntityHook.OnEnabled : EntityHook.OnDisabled, entityID);
 
 			EntityID[] children = GetChildren(entityID);
 
