@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 
 namespace neon
 {
@@ -232,7 +233,12 @@ namespace neon
 
         public T? Add<T>(EntityID entityID, T component) where T : class, IComponent
         {
-            component.EntityID = Entities.GetID(true);
+            PropertyInfo entityIDProperty = typeof(T).GetProperty("EntityID");
+
+            if (!entityIDProperty.CanWrite)
+                throw new Exception($"Error : component of type {typeof(T)} doesn't posess a setter on EntityID property");
+                
+            entityIDProperty.SetValue(component, Entities.GetID(true));
 
             component.EntityID.SetParent(entityID);
 
