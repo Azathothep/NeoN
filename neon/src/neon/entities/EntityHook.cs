@@ -4,6 +4,7 @@
     {
         OnEnabled,
         OnDisabled,
-        OnFamilyChange
+        OnNewParent,
+        OnNewChild
     }
 }

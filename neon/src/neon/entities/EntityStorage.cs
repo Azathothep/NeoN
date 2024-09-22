@@ -69,6 +69,9 @@ namespace neon
             m_ChildEntities.Add(childID, parentID);
 
             childID.Refresh(EntityID.RefreshMode.ActiveState | EntityID.RefreshMode.Depth);
+
+            Hooks.Trigger(EntityHook.OnNewChild, parentID);
+            Hooks.Trigger(EntityHook.OnNewParent, childID);
         }
 
         private void RemoveRelation(EntityID parentID, EntityID childID)
@@ -76,8 +79,11 @@ namespace neon
             if (!m_ParentEntities.TryGetValue(parentID, out HashSet<EntityID>? childSet))
                 childSet.Remove(childID);
 
-            if (!m_ChildEntities.ContainsKey(childID))
+            if (m_ChildEntities.ContainsKey(childID))
                 m_ChildEntities.Remove(childID);
+
+            Hooks.Trigger(EntityHook.OnNewChild, parentID);
+            Hooks.Trigger(EntityHook.OnNewParent, childID);
         }
 
         public EntityID GetParent(EntityID entityID)
