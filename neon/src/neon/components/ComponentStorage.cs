@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 
@@ -246,7 +247,7 @@ namespace neon
 
                 AddEntityToArchetype(entityID, new List<IComponent> { component }, archetype);
 
-                Trigger<T>(ComponentHook.OnAdded, componentID, entityID);
+                OnComponentAdded(component, componentID);
 
                 return component;
             }
@@ -305,9 +306,17 @@ namespace neon
                 }
             }
 
-            Trigger<T>(ComponentHook.OnAdded, componentID, entityID);
+            OnComponentAdded(component, componentID);
 
             return component;
+        }
+
+        private void OnComponentAdded<T>(T component, ComponentID componentID) where T : class, IComponent
+        {
+            if (component is IAwakable awakable)
+                awakable.Awake();
+
+            Trigger<T>(ComponentHook.OnAdded, componentID, component.EntityID);
         }
 
         public void Remove<T>(EntityID entityID) where T : class, IComponent
