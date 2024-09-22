@@ -16,6 +16,10 @@
 
         public static void Add(IDrawSystem drawSystem) => storage.DrawSystems.Add(drawSystem);
 
+        public static void Remove(IUpdateSystem updateSystem) => storage.UpdateSystems.Remove(updateSystem);
+
+        public static void Remove(IDrawSystem drawSystem) => storage.DrawSystems.Remove(drawSystem);
+
         public static void Update(TimeSpan timeSpan)
         {
             for (int i = 0; i < storage.UpdateSystems.Count; i++)
