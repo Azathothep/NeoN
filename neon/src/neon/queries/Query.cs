@@ -84,7 +84,7 @@ namespace neon
             queryFilters[0] = new QueryFilter<T1>(FilterTerm.Has);
             queryFilters[1] = new QueryFilter<T2>(FilterTerm.Has);
             queryFilters[2] = new QueryFilter<T3>(FilterTerm.Has);
-            queryFilters[2] = new QueryFilter<T4>(FilterTerm.Has);
+            queryFilters[3] = new QueryFilter<T4>(FilterTerm.Has);
 
             return queryFilters.ToArray();
         }
