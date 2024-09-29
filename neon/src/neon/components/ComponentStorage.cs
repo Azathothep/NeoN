@@ -153,6 +153,17 @@ namespace neon
             }
         }
 
+        public class SerializedComponentInterface : ISerializedComponentInterface {
+            private ComponentStorage m_ComponentStorage;
+
+            public SerializedComponentInterface(ComponentStorage componentStorage)
+            {
+                m_ComponentStorage = componentStorage;
+            }
+
+            public IComponent? AddComponentByType(EntityID entityID, IComponent component, Type type) => m_ComponentStorage.Add(entityID, component, type);
+        }
+
         private Dictionary<EntityID, (Archetype, int)> m_EntityToArchetype = new();
 
         private Dictionary<ArchetypeID, List<EntityID>> m_ArchetypeToEntities = new();
@@ -170,6 +181,9 @@ namespace neon
         private IComponentIteratorProvider m_IteratorProvider;
         public IComponentIteratorProvider IteratorProvider => m_IteratorProvider;
 
+        private ISerializedComponentInterface m_SerializedInterface;
+        public ISerializedComponentInterface SerializedInterface => m_SerializedInterface;
+
         private Dictionary<ComponentID, HookTrigger<ComponentHook>> m_HookTriggers = new();
 
         public ComponentStorage(ComponentStorageNotifier storageNotifier)
@@ -177,6 +191,7 @@ namespace neon
             m_ComponentStorageNotifier = storageNotifier;
 
             m_IteratorProvider = new ComponentIteratorProvider(this);
+            m_SerializedInterface = new SerializedComponentInterface(this);
 
             Hooks.Add(EntityHook.OnEnabled, (o) => OnEntityActiveStateChanged((EntityID)o, true));
             Hooks.Add(EntityHook.OnDisabled, (o) => OnEntityActiveStateChanged((EntityID)o, false));
@@ -233,16 +248,27 @@ namespace neon
 
         public T? Add<T>(EntityID entityID, T component) where T : class, IComponent
         {
-            PropertyInfo entityIDProperty = typeof(T).GetProperty("EntityID");
+            return (T?)Add(entityID, component, typeof(T));
+        }
+
+        private IComponent? Add(EntityID entityID, IComponent component, Type type)
+        {
+            PropertyInfo entityIDProperty = type.GetProperty("EntityID");
 
             if (!entityIDProperty.CanWrite)
-                throw new Exception($"Error : component of type {typeof(T)} doesn't posess a setter on EntityID property");
-                
+                throw new Exception($"Error : component of type {type} doesn't posess a setter on EntityID property");
+
             entityIDProperty.SetValue(component, Entities.GetID(true));
 
             component.EntityID.SetParent(entityID);
 
-            ComponentID componentID = Components.GetID<T>();
+            if (component.GetType().IsAssignableFrom(typeof(IComponent)))
+                return null;
+
+            ComponentID componentID = Components.GetIDByType(type);
+
+            if (componentID == null)
+                return null;
 
             // If the entity isn't recorded yet for having any component
             if (!m_EntityToArchetype.TryGetValue(entityID, out (Archetype, int) archetypeRecord))
@@ -269,7 +295,7 @@ namespace neon
 
                         int column = GetColumn(componentID, archetype);
                         IComponent previousComponent = archetype.Columns[column][row];
-                        
+
                         archetype.Columns[column][row] = component; // Replace
 
                         Destroy(previousComponent);
@@ -312,17 +338,17 @@ namespace neon
                 }
             }
 
-            OnComponentAdded(component, componentID);
+            OnComponentAdded(component, componentID); // Component is IComponent and not T
 
             return component;
         }
 
-        private void OnComponentAdded<T>(T component, ComponentID componentID) where T : class, IComponent
+        private void OnComponentAdded(IComponent component, ComponentID componentID)
         {
             if (component is IAwakable awakable)
                 awakable.Awake();
 
-            Trigger<T>(ComponentHook.OnAdded, componentID, component.EntityID);
+            Trigger(ComponentHook.OnAdded, componentID, component.GetType(), component.EntityID);
         }
 
         public void Remove<T>(EntityID entityID) where T : class, IComponent
@@ -349,7 +375,7 @@ namespace neon
                 m_EntityToArchetype.Remove(entityID);
                 Destroy(component);
 
-                Trigger<T>(ComponentHook.OnRemoved, componentID, entityID);
+                Trigger(ComponentHook.OnRemoved, componentID, typeof(T), entityID);
 
                 return;
             }
@@ -387,7 +413,7 @@ namespace neon
                 AddEntityToArchetype(entityID, components, nextArchetype);
             }
 
-            Trigger<T>(ComponentHook.OnRemoved, componentID, entityID);
+            Trigger(ComponentHook.OnRemoved, componentID, typeof(T), entityID);
         }
 
         public void Remove(EntityID entityID)
@@ -581,11 +607,11 @@ namespace neon
             return components.ToArray();
         }
 
-        private void Trigger<T>(ComponentHook hook, ComponentID id, object o) where T : class, IComponent
+        private void Trigger(ComponentHook hook, ComponentID id, Type componentType, object o)
         {
             if (!m_HookTriggers.TryGetValue(id, out HookTrigger<ComponentHook> hookTrigger))
             {
-                hookTrigger = Hooks.Create<ComponentHook, T>();
+                hookTrigger = Hooks.Create<ComponentHook>(componentType);
                 m_HookTriggers.Add(id, hookTrigger);
             }
 

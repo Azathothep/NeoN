@@ -32,7 +32,7 @@ namespace neon
 
         public static ComponentID GetIDByType(Type componentType)
         {
-            if (!componentType.IsSubclassOf(typeof(IComponent)))
+            if (componentType.IsAssignableFrom(typeof(IComponent)))
                 return null;
 
             return GetIDByTypeUnsafe(componentType);

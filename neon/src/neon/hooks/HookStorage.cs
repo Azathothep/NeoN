@@ -9,9 +9,9 @@ namespace neon
 
         public HookStorage() { }
 
-        public HookTrigger<HookID> Create<HookID>() where HookID : struct, IConvertible
+        public HookTrigger<HookID> Create<HookID>(Type additionalType = null) where HookID : struct, IConvertible
         {
-            IHookType type = new HookType<HookID>();
+            IHookType type = new HookType<HookID>(additionalType);
 
             if (m_Hooks.ContainsKey(type))
                 return null;

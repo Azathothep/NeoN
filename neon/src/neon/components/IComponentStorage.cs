@@ -10,6 +10,8 @@ namespace neon
     {
         IComponentIteratorProvider IteratorProvider { get; }
 
+        ISerializedComponentInterface SerializedInterface { get; }
+
         public T? Get<T>(EntityID entityID) where T : class, IComponent;
 
         public object[] GetComponentsInternal(EntityID entityID, ComponentID[] componentIDs);

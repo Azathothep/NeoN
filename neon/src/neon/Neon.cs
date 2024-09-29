@@ -2,7 +2,15 @@
 {
     public class Neon
     {
-        public static void Initialize()
+        public struct Architecture
+        {
+            public IHookStorage HookStorage;
+            public IEntityStorage EntityStorage;
+            public IComponentStorage ComponentStorage;
+            public IQueryStorage QueryStorage;
+        }
+
+        public static Architecture Initialize()
         {
             // Hooks
 
@@ -29,6 +37,18 @@
             IQueryStorage queryStorage = new QueryStorage(componentStorage.IteratorProvider, storageNotifier);
 
             QueryBuilder.SetStorage(queryStorage);
+
+            // Architecture
+
+            Architecture architecture = new Architecture()
+            {
+                HookStorage = hookStorage,
+                EntityStorage = entityStorage,
+                ComponentStorage = componentStorage,
+                QueryStorage = queryStorage
+            };
+
+            return architecture;
         }
     }
 }

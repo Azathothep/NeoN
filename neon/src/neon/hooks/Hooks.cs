@@ -9,7 +9,7 @@
             Hooks.storage = storage;
         }
 
-        public static HookTrigger<HookID> Create<HookID>() where HookID : struct, IConvertible => storage.Create<HookID>();
+        public static HookTrigger<HookID> Create<HookID>(Type additionalType = null) where HookID : struct, IConvertible => storage.Create<HookID>(additionalType);
 
         public static HookTrigger<HookID> Create<HookID, T>() where HookID : struct, IConvertible => storage.Create<HookID, T>();
 
