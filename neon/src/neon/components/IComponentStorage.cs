@@ -14,6 +14,8 @@ namespace neon
 
         public T? Get<T>(EntityID entityID) where T : class, IComponent;
 
+		public IComponent[] GetAll(EntityID entityID);
+
         public object[] GetComponentsInternal(EntityID entityID, ComponentID[] componentIDs);
 
         public bool Has<T>(EntityID entityID) where T : class, IComponent;

@@ -11,8 +11,8 @@ namespace neon
     {
         private HashSet<EntityID> m_EntityIDs = new();
 
-        private Dictionary<EntityID, HashSet<EntityID>> m_ParentEntities = new();
-        private Dictionary<EntityID, EntityID> m_ChildEntities = new();
+        private Dictionary<EntityID, HashSet<EntityID>> m_ParentToChildren = new();
+        private Dictionary<EntityID, EntityID> m_ChildToParent = new();
 
         private Random random = new Random();
 
@@ -36,9 +36,13 @@ namespace neon
             while (m_EntityIDs.Contains(id))
                 id = RandomUInt32();
 
-            //Debug.WriteLine($"New entity created with id {id}");
+            EntityID newEntityID = new EntityID(id, isComponent);
 
-            return new EntityID(id, isComponent);
+            m_EntityIDs.Add(newEntityID);
+
+            Debug.WriteLine($"New entity created with id {id}");
+
+            return newEntityID;
         }
 
         public void Destroy(EntityID entityID)
@@ -62,15 +66,15 @@ namespace neon
             if (parentID == null || childID == null)
                 throw new ArgumentNullException("Trying to Set Relation with a null parameter");
 
-            if (!m_ParentEntities.TryGetValue(parentID, out HashSet<EntityID>? childSet))
+            if (!m_ParentToChildren.TryGetValue(parentID, out HashSet<EntityID>? childSet))
             {
                 childSet = new HashSet<EntityID>();
-                m_ParentEntities.Add(parentID, childSet);
+                m_ParentToChildren.Add(parentID, childSet);
             }
 
             childSet.Add(childID);
 
-            m_ChildEntities.Add(childID, parentID);
+            m_ChildToParent.Add(childID, parentID);
 
             childID.Refresh(EntityID.RefreshMode.ActiveState | EntityID.RefreshMode.Depth);
 
@@ -80,11 +84,11 @@ namespace neon
 
         private void RemoveRelation(EntityID parentID, EntityID childID)
         {
-            if (!m_ParentEntities.TryGetValue(parentID, out HashSet<EntityID>? childSet))
+            if (m_ParentToChildren.TryGetValue(parentID, out HashSet<EntityID>? childSet))
                 childSet.Remove(childID);
 
-            if (m_ChildEntities.ContainsKey(childID))
-                m_ChildEntities.Remove(childID);
+            if (m_ChildToParent.ContainsKey(childID))
+                m_ChildToParent.Remove(childID);
 
             m_HookTrigger.Raise(EntityHook.OnNewChild, parentID);
             m_HookTrigger.Raise(EntityHook.OnNewParent, childID);
@@ -92,7 +96,7 @@ namespace neon
 
         public EntityID GetParent(EntityID entityID)
         {
-            if (m_ChildEntities.TryGetValue(entityID, out EntityID? parent))
+            if (m_ChildToParent.TryGetValue(entityID, out EntityID? parent))
                 return parent;
 
             return null;
@@ -100,7 +104,7 @@ namespace neon
 
         public EntityID[] GetChildren(EntityID entityID, bool includeComponents = true)
         {
-            if (m_ParentEntities.TryGetValue(entityID, out HashSet<EntityID>? children))
+            if (m_ParentToChildren.TryGetValue(entityID, out HashSet<EntityID>? children))
             {
                 if (includeComponents)
                     return children.ToArray();
@@ -128,6 +132,11 @@ namespace neon
             {
                 child.Refresh(EntityID.RefreshMode.ActiveState);
             }
+        }
+
+        public EntityID[] GetRoots()
+        {
+            return m_EntityIDs.Where((e) => !m_ChildToParent.ContainsKey(e)).ToArray();
         }
     }
 }

@@ -27,6 +27,8 @@ namespace neon
             return storage.Get<T>(entityID);
         }
 
+		public static IComponent[] GetAll(EntityID entityID) => storage.GetAll(entityID);
+
         public static (T1?, T2?) Get<T1, T2>(EntityID entityID) where T1 : class, IComponent where T2 : class, IComponent
         {
             object[] rawComponents = storage.GetComponentsInternal(entityID, new ComponentID[]

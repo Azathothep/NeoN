@@ -13,6 +13,8 @@ namespace neon
 
         public void SetRelation(EntityID parentID, EntityID childID);
 
+        public EntityID[] GetRoots();
+
         public EntityID GetParent(EntityID entityID);
 
         public EntityID[] GetChildren(EntityID entityID, bool includeComponents = true);

@@ -125,6 +125,8 @@ namespace neon
 
         public T? Get<T>() where T : class, IComponent => neon.Components.Get<T>(this);
 
+		public IComponent[] GetAll() => neon.Components.GetAll(this);
+
         public bool TryGet<T>(out T? component) where T : class, IComponent => neon.Components.TryGet(this, out component);
 
         public (T1?, T2?) Get<T1, T2>() where T1 : class, IComponent where T2 : class, IComponent => neon.Components.Get<T1, T2>(this);
@@ -136,6 +138,8 @@ namespace neon
         public void Remove<T>() where T : class, IComponent => Components.Remove<T>(this);
 
         public EntityID GetParent() => Entities.GetParent(this);
+
+        public IComponent GetComponentOfEntityID(EntityID entityID) => GetAll().First(c => c.EntityID == entityID);
 
         public EntityID[] GetChildren(bool includeComponents = true) => Entities.GetChildren(this, includeComponents);
 

@@ -114,13 +114,15 @@ namespace neon
                     if (queryFilters[filterIndex].Term != FilterTerm.Has)
                         break;
 
-                    if (m_Storage.m_ComponentIDToArchetypeSet.TryGetValue(queryFilters[filterIndex].ComponentID, out Dictionary<ArchetypeID, int> satisfyingArchetypes))
+                    Dictionary<ArchetypeID, int> satisfyingArchetypes;
+
+                    if (!m_Storage.m_ComponentIDToArchetypeSet.TryGetValue(queryFilters[filterIndex].ComponentID, out satisfyingArchetypes))
+                        satisfyingArchetypes = new();
+
+                    for (int j = archetypesLeft.Count - 1; j >= 0; j--)
                     {
-                        for (int j = archetypesLeft.Count - 1; j >= 0; j--)
-                        {
-                            if (satisfyingArchetypes.ContainsKey(archetypesLeft[j]) == false)
-                                archetypesLeft.RemoveAt(j);
-                        }
+                        if (satisfyingArchetypes.ContainsKey(archetypesLeft[j]) == false)
+                            archetypesLeft.RemoveAt(j);
                     }
                 }
 
@@ -131,13 +133,15 @@ namespace neon
                     if (queryFilters[filterIndex].Term != FilterTerm.HasNot)
                         break;
 
-                    if (m_Storage.m_ComponentIDToArchetypeSet.TryGetValue(queryFilters[filterIndex].ComponentID, out Dictionary<ArchetypeID, int> satisfyingArchetypes))
+                    Dictionary<ArchetypeID, int> satisfyingArchetypes;
+
+                    if (!m_Storage.m_ComponentIDToArchetypeSet.TryGetValue(queryFilters[filterIndex].ComponentID, out satisfyingArchetypes))
+                        satisfyingArchetypes = new();
+
+                    for (int j = archetypesLeft.Count - 1; j >= 0; j--)
                     {
-                        for (int j = archetypesLeft.Count - 1; j >= 0; j--)
-                        {
-                            if (satisfyingArchetypes.ContainsKey(archetypesLeft[j]))
-                                archetypesLeft.RemoveAt(j);
-                        }
+                        if (satisfyingArchetypes.ContainsKey(archetypesLeft[j]))
+                            archetypesLeft.RemoveAt(j);
                     }
                 }
 
@@ -222,6 +226,25 @@ namespace neon
             return (T)archetype.Columns[column][row];
         }
 
+		public IComponent[] GetAll(EntityID entityID)
+		{
+			if (!m_EntityToArchetype.TryGetValue(entityID, out (Archetype, int) archetypeRecord))
+			{
+				return new IComponent[0];
+			}
+
+			(Archetype archetype, int rows) = archetypeRecord;
+
+			int count = archetype.Columns.Count;
+
+			IComponent[] components = new IComponent[count];
+
+			for (int i = 0; i < count; i++)
+				components[i] = archetype.Columns[i][rows];
+
+			return components;
+		}
+
         public bool Has<T>(EntityID entityID) where T : class, IComponent
         {
             ComponentID componentID = Components.GetID<T>();
@@ -253,6 +276,8 @@ namespace neon
 
         private IComponent? Add(EntityID entityID, IComponent component, Type type)
         {
+            Debug.WriteLine($"Adding component of type {type} to {(UInt32)entityID}");
+
             PropertyInfo entityIDProperty = type.GetProperty("EntityID");
 
             if (!entityIDProperty.CanWrite)

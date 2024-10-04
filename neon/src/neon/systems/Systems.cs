@@ -20,6 +20,10 @@
 
         public static void Remove(IDrawSystem drawSystem) => storage.DrawSystems.Remove(drawSystem);
 
+        public static IUpdateSystem[] GetCurrentUpdateSystems() => storage.UpdateSystems.ToArray();
+
+        public static IDrawSystem[] GetCurrentDrawSystems() => storage.DrawSystems.ToArray();
+
         public static void Update(TimeSpan timeSpan)
         {
             for (int i = 0; i < storage.UpdateSystems.Count; i++)
