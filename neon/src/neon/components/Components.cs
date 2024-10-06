@@ -81,6 +81,11 @@ namespace neon
             return storage.Add(entityID, (T)inputComponent.Clone());
         }
 
+        public static IComponent? Add(EntityID entityID, IComponent inputComponent, Type type)
+        {
+            return storage.Add(entityID, inputComponent, type);
+        }
+
         public static void Remove<T>(EntityID entityID) where T : class, IComponent
         {
             storage.Remove<T>(entityID);

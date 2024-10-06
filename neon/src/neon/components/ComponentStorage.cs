@@ -157,17 +157,6 @@ namespace neon
             }
         }
 
-        public class SerializedComponentInterface : ISerializedComponentInterface {
-            private ComponentStorage m_ComponentStorage;
-
-            public SerializedComponentInterface(ComponentStorage componentStorage)
-            {
-                m_ComponentStorage = componentStorage;
-            }
-
-            public IComponent? AddComponentByType(EntityID entityID, IComponent component, Type type) => m_ComponentStorage.Add(entityID, component, type);
-        }
-
         private Dictionary<EntityID, (Archetype, int)> m_EntityToArchetype = new();
 
         private Dictionary<ArchetypeID, List<EntityID>> m_ArchetypeToEntities = new();
@@ -185,9 +174,6 @@ namespace neon
         private IComponentIteratorProvider m_IteratorProvider;
         public IComponentIteratorProvider IteratorProvider => m_IteratorProvider;
 
-        private ISerializedComponentInterface m_SerializedInterface;
-        public ISerializedComponentInterface SerializedInterface => m_SerializedInterface;
-
         private Dictionary<ComponentID, HookTrigger<ComponentHook>> m_HookTriggers = new();
 
         public ComponentStorage(ComponentStorageNotifier storageNotifier)
@@ -195,7 +181,6 @@ namespace neon
             m_ComponentStorageNotifier = storageNotifier;
 
             m_IteratorProvider = new ComponentIteratorProvider(this);
-            m_SerializedInterface = new SerializedComponentInterface(this);
 
             Hooks.Add(EntityHook.OnEnabled, (o) => OnEntityActiveStateChanged((EntityID)o, true));
             Hooks.Add(EntityHook.OnDisabled, (o) => OnEntityActiveStateChanged((EntityID)o, false));
@@ -274,13 +259,13 @@ namespace neon
             return (T?)Add(entityID, component, typeof(T));
         }
 
-        private IComponent? Add(EntityID entityID, IComponent component, Type type)
+        public IComponent? Add(EntityID entityID, IComponent component, Type type)
         {
             Debug.WriteLine($"Adding component of type {type} to {(UInt32)entityID}");
 
             PropertyInfo entityIDProperty = type.GetProperty("EntityID");
 
-            if (!entityIDProperty.CanWrite)
+            if (entityIDProperty == null || !entityIDProperty.CanWrite)
                 throw new Exception($"Error : component of type {type} doesn't posess a setter on EntityID property");
 
             entityIDProperty.SetValue(component, Entities.GetID(true));

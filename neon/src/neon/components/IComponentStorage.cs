@@ -10,8 +10,6 @@ namespace neon
     {
         IComponentIteratorProvider IteratorProvider { get; }
 
-        ISerializedComponentInterface SerializedInterface { get; }
-
         public T? Get<T>(EntityID entityID) where T : class, IComponent;
 
 		public IComponent[] GetAll(EntityID entityID);
@@ -21,6 +19,8 @@ namespace neon
         public bool Has<T>(EntityID entityID) where T : class, IComponent;
 
         public T? Add<T>(EntityID entityID, T component) where T : class, IComponent;
+
+        public IComponent? Add(EntityID entityID, IComponent component, Type type);
 
         public void Remove<T>(EntityID entityID) where T : class, IComponent;
 

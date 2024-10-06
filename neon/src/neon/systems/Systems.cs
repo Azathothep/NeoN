@@ -1,4 +1,7 @@
-﻿namespace neon
+﻿using System.Diagnostics;
+using System.Reflection;
+
+namespace neon
 {
     public class Systems
     {
@@ -14,6 +17,16 @@
 
         public static void Add(IGameSystem gameSystem)
         {
+            Type type = gameSystem.GetType();
+            bool unique = type.GetCustomAttribute<AllowMultipleAttribute>() == null;
+
+            if (unique && (storage.UpdateSystems.FirstOrDefault(s => s.GetType() == type) != null
+                || storage.DrawSystems.FirstOrDefault(s => s.GetType() == type) != null))
+            {
+                Debug.WriteLine($"{type} has been added multiple times but is a unique system. Skipping.");
+                return;
+            }
+
             if (gameSystem is IUpdateSystem)
                 storage.UpdateSystems.Add((IUpdateSystem)gameSystem);
             else if (gameSystem is IDrawSystem)
