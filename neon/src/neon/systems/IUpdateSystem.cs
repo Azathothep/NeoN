@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace neon
 {
-    public interface IUpdateSystem
+    public interface IUpdateSystem : IGameSystem
     {
         public void Update(TimeSpan timeSpan);
     }

@@ -12,17 +12,34 @@
 
         private Systems() { }
 
-        public static void Add(IUpdateSystem updateSystem) => storage.UpdateSystems.Add(updateSystem);
+        public static void Add(IGameSystem gameSystem)
+        {
+            if (gameSystem is IUpdateSystem)
+                storage.UpdateSystems.Add((IUpdateSystem)gameSystem);
+            else if (gameSystem is IDrawSystem)
+                storage.DrawSystems.Add((IDrawSystem)gameSystem);
+        }
 
-        public static void Add(IDrawSystem drawSystem) => storage.DrawSystems.Add(drawSystem);
+        public static void Remove(IGameSystem gameSystem)
+        {
+            if (gameSystem is IUpdateSystem)
+                storage.UpdateSystems.Remove((IUpdateSystem)gameSystem);
+            else if (gameSystem is IDrawSystem)
+                storage.DrawSystems.Remove((IDrawSystem)gameSystem);
+        }
 
-        public static void Remove(IUpdateSystem updateSystem) => storage.UpdateSystems.Remove(updateSystem);
+        public static IGameSystem[] GetLoadedSystems()
+        {
+            IGameSystem[] gameSystems = new IGameSystem[storage.UpdateSystems.Count + storage.DrawSystems.Count];
 
-        public static void Remove(IDrawSystem drawSystem) => storage.DrawSystems.Remove(drawSystem);
+            for (int i = 0; i < storage.UpdateSystems.Count; i++)
+                gameSystems[i] = storage.UpdateSystems[i];
 
-        public static IUpdateSystem[] GetCurrentUpdateSystems() => storage.UpdateSystems.ToArray();
+            for (int i = 0; i < storage.DrawSystems.Count; i++)
+                gameSystems[storage.UpdateSystems.Count + i] = storage.DrawSystems[i];
 
-        public static IDrawSystem[] GetCurrentDrawSystems() => storage.DrawSystems.ToArray();
+            return gameSystems;
+        }
 
         public static void Update(TimeSpan timeSpan)
         {
